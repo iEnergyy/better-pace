@@ -152,7 +152,7 @@ packages/db ──imports──►  packages/core   (persistence maps to domain)
 
 **Database (`packages/db`)**
 
-- [x] PostgreSQL provider chosen (Supabase or Neon) — connection via `DATABASE_URL`
+- [x] PostgreSQL provider chosen (Neon) — connection via `DATABASE_URL`
 - [x] Drizzle ORM schema + migrations workflow (scripts + config; first migration applied with auth tables in 0.2)
 - [x] Schema maps persistence ↔ `packages/core` entities (pg enums import core const arrays; mappers in `packages/db`)
 - [x] Seed script (optional for Phase 0)
@@ -938,7 +938,7 @@ You are ready to write code when:
 1. This roadmap is accepted as the sequencing source of truth  
 2. Architecture locked: **Turborepo monorepo** + **`packages/core` domain layer**  
 3. Strava API application credentials exist (or are requestable)  
-4. Postgres provider chosen (Supabase or Neon)  
+4. Postgres provider chosen (Neon)  
 5. Background jobs provider chosen (**Inngest**)  
 6. Phase 0.1 local foundation is in place; remaining 0.1 items are Vercel + non-prod DB + first migration  
 

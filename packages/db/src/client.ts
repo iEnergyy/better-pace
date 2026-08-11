@@ -5,8 +5,8 @@ import * as schema from "./schema/index"
 export type Database = ReturnType<typeof createDb>
 
 /**
- * Creates a Drizzle client. Use a pooled connection string in serverless
- * (Supabase pooler / Neon pooled) via DATABASE_URL.
+ * Creates a Drizzle client. Use a Neon pooled connection string in
+ * serverless via DATABASE_URL.
  */
 export function createDb(connectionString: string) {
   const client = postgres(connectionString, {

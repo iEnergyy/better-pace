@@ -444,7 +444,7 @@ Long-term differentiation:
 ### Infrastructure
 
 - Vercel
-- Supabase or Neon
+- Neon (PostgreSQL)
 
 ### External API
 
@@ -488,11 +488,10 @@ Domain types live only in `@pacepilot/core`. Apps and `packages/db` import them 
 
 ```bash
 pnpm install
-cp .env.example .env                     # root — DATABASE_URL, BETTER_AUTH_*
-cp .env.example apps/web/.env.local      # Next.js loads auth + DB from here
-# Generate secret: openssl rand -base64 32 → BETTER_AUTH_SECRET (≥32 chars)
+cp .env.example .env                     # root only — inherited by apps/packages via dotenv-cli
+# Fill DATABASE_URL (Neon pooled) + BETTER_AUTH_SECRET (≥32 chars: openssl rand -base64 32)
 pnpm db:generate && pnpm db:migrate      # first-time / after schema changes
-pnpm dev                                 # turbo: web (:3000) + api (:3001)
+pnpm dev                                 # loads root .env, then turbo: web (:3000) + api (:3001)
 ```
 
 Useful scripts:
@@ -525,7 +524,7 @@ pnpm test:e2e
 
 ### Database
 
-Use **PostgreSQL** (Supabase or Neon). Prefer a **pooled** connection string for serverless (`DATABASE_URL`). Schema and migrations live in `packages/db` (Drizzle). Auth tables (`user`, `session`, `account`, `verification`) plus domain tables ship in the first migration.
+Use **Neon PostgreSQL**. Prefer a **pooled** connection string for serverless (`DATABASE_URL`). Put secrets in the monorepo root `.env` — `pnpm dev` / `pnpm db:*` load it and Turbo passes vars through to apps and packages. Schema and migrations live in `packages/db` (Drizzle). Auth tables (`user`, `session`, `account`, `verification`) plus domain tables ship in the first migration.
 
 ### Auth / Strava / jobs
 

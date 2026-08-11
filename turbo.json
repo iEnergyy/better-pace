@@ -1,6 +1,24 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalDependencies": [".env"],
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "API_PORT",
+    "WEB_ORIGIN",
+    "NEXT_PUBLIC_API_URL",
+    "STRAVA_CLIENT_ID",
+    "STRAVA_CLIENT_SECRET",
+    "STRAVA_REDIRECT_URI",
+    "TOKEN_ENCRYPTION_KEY",
+    "INNGEST_EVENT_KEY",
+    "INNGEST_SIGNING_KEY",
+    "OPENAI_API_KEY",
+    "PLAYWRIGHT_BASE_URL",
+    "CI"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

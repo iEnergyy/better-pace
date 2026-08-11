@@ -3,22 +3,23 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "turbo build",
-    "dev": "turbo dev",
+    "build": "dotenv -e .env -- turbo build",
+    "dev": "dotenv -e .env -- turbo dev",
     "lint": "turbo lint",
     "format": "biome check --write .",
     "typecheck": "turbo typecheck",
-    "test": "turbo test",
-    "test:e2e": "pnpm --filter @pacepilot/e2e test",
-    "db:generate": "pnpm --filter @pacepilot/db db:generate",
-    "db:migrate": "pnpm --filter @pacepilot/db db:migrate",
-    "db:push": "pnpm --filter @pacepilot/db db:push",
-    "db:studio": "pnpm --filter @pacepilot/db db:studio",
-    "db:seed": "pnpm --filter @pacepilot/db db:seed"
+    "test": "dotenv -e .env -- turbo test",
+    "test:e2e": "dotenv -e .env -- pnpm --filter @pacepilot/e2e test",
+    "db:generate": "dotenv -e .env -- pnpm --filter @pacepilot/db db:generate",
+    "db:migrate": "dotenv -e .env -- pnpm --filter @pacepilot/db db:migrate",
+    "db:push": "dotenv -e .env -- pnpm --filter @pacepilot/db db:push",
+    "db:studio": "dotenv -e .env -- pnpm --filter @pacepilot/db db:studio",
+    "db:seed": "dotenv -e .env -- pnpm --filter @pacepilot/db db:seed"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.11",
     "@workspace/typescript-config": "workspace:*",
+    "dotenv-cli": "^11.0.0",
     "turbo": "^2.9.18",
     "typescript": "^5"
   },

@@ -888,7 +888,7 @@ PacePilot should not claim medical diagnoses or injury diagnoses.
 ## Infrastructure
 
 - Vercel
-- Supabase or Neon
+- Neon (PostgreSQL)
 
 ## External Integration
 
