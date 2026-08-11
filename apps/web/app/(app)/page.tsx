@@ -1,8 +1,16 @@
 import { Separator } from "@workspace/ui/components/separator"
 import { EmptyState } from "@/components/empty-state"
 import { SportCatalog } from "@/components/sport-catalog"
+import { requireSession } from "@/lib/session"
+import { getAthleteIdForUser, getStravaUiStatus } from "@/lib/strava/connection"
 
-export default function Page() {
+export default async function Page() {
+  const session = await requireSession()
+  const athleteId = await getAthleteIdForUser(session.user.id)
+  const strava = athleteId
+    ? await getStravaUiStatus(athleteId)
+    : { connected: false, connection: null }
+
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-3">
@@ -29,11 +37,19 @@ export default function Page() {
 
       <Separator />
 
-      <EmptyState
-        title="No activities yet"
-        description="Connect Strava in a later Phase 0 step to import your history. Sync and metrics land after auth."
-        actionLabel="Connect Strava (soon)"
-      />
+      {strava.connected ? (
+        <EmptyState
+          title="Waiting for activity import"
+          description="Strava is connected. Historical sync lands in phase 0.4 — your timeline will fill in once import jobs run."
+        />
+      ) : (
+        <EmptyState
+          title="No activities yet"
+          description="Connect Strava to import your training history. Tokens stay encrypted server-side."
+          actionHref="/api/strava/connect"
+          actionLabel="Connect Strava"
+        />
+      )}
     </div>
   )
 }

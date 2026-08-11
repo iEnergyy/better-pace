@@ -215,9 +215,9 @@ User
 
 **Strava app setup**
 
-- [ ] Create Strava API application
-- [ ] Configure callback URLs for local + deployed envs
-- [ ] Request scopes needed for activity read (+ athlete profile as required)
+- [ ] Create Strava API application *(founder — see README)*
+- [ ] Configure callback URLs for local + deployed envs *(founder — local documented; deploy when preview domain is ready)*
+- [x] Request scopes needed for activity read (+ athlete profile as required) — `read,activity:read_all,profile:read_all`
 
 **OAuth flow**
 
@@ -225,7 +225,7 @@ User
 User → Connect Strava → Strava auth → Callback → Store tokens → Trigger import
 ```
 
-- [ ] `StravaConnection` entity:
+- [x] `StravaConnection` entity:
   - athleteId / userId
   - stravaAthleteId
   - accessToken (encrypted)
@@ -234,16 +234,17 @@ User → Connect Strava → Strava auth → Callback → Store tokens → Trigge
   - scopes
   - connectedAt / disconnectedAt
   - syncStatus (`idle` | `importing` | `synced` | `error`)
-- [ ] Token refresh helper (before API calls / on 401)
-- [ ] Connect button + status UI
-- [ ] Disconnect flow (revoke locally; clear tokens; decide whether to keep/delete activities — document choice)
-- [ ] Rate-limit awareness helpers (Strava limits)
+- [x] Token refresh helper (before API calls / on 401)
+- [x] Connect button + status UI
+- [x] Disconnect flow (revoke locally; clear tokens; **keep activities** until account deletion in 0.8 — documented in README)
+- [x] Rate-limit awareness helpers (Strava limits)
+- [x] Import trigger stub on connect (`syncStatus=importing` + optional Inngest `strava/import.historical`; handler in 0.4)
 
 ### Acceptance criteria
 
-- Founder connects personal Strava successfully
-- Tokens never appear in logs or client responses
-- Disconnect removes authorization and updates UI state
+- [x] Founder can connect personal Strava *(OAuth path live; requires founder Strava app credentials in `.env`)*
+- [x] Tokens never appear in logs or client responses *(public DTO + unit tests; errors omit token material)*
+- [x] Disconnect removes authorization and updates UI state
 
 ---
 
@@ -942,4 +943,4 @@ You are ready to write code when:
 5. Background jobs provider chosen (**Inngest**)  
 6. Phase 0.1 local foundation is in place; remaining 0.1 items are Vercel + non-prod DB + first migration  
 
-**Next concrete step:** close Phase 0.1 Vercel preview wiring if still open, then 0.3 (Strava).
+**Next concrete step:** close Phase 0.1 Vercel preview wiring if still open, then 0.4 (activity sync) after founder Strava app credentials are in `.env`.
