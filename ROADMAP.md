@@ -1,6 +1,6 @@
 # PacePilot — Implementation Roadmap
 
-**Status:** Phase 0 in progress (0.1 foundation complete)  
+**Status:** Phase 0 in progress (0.1 local foundation done; Vercel + non-prod DB wiring open)  
 **Based on:** [README.md](./README.md), [PRD.md](./PRD.md)  
 **North star:** Useful Insights per Active Athlete  
 **Architecture:** Turborepo monorepo · domain models in `packages/core` (DDD domain layer)  
@@ -57,7 +57,8 @@ better-pace/
 ├── packages/
 │   ├── core/         # Domain layer — entities, value objects, domain rules
 │   ├── db/           # Drizzle schema, migrations, DB client (depends on core)
-│   └── …             # Future: ui, config, typescript-config, etc.
+│   ├── ui/           # Shared shadcn/ui components + design tokens
+│   └── typescript-config/
 ├── turbo.json
 ├── package.json
 └── …
@@ -107,9 +108,9 @@ packages/db ──imports──►  packages/core   (persistence maps to domain)
 
 ### Outcomes
 
-- **Turborepo monorepo** is bootstrapped and runnable locally + on Vercel.
+- **Turborepo monorepo** is bootstrapped and runnable locally (Vercel deploy wiring still open — see Infrastructure).
 - `packages/core` exists as the DDD domain layer for entities/models.
-- Apps (`web`, `api`) and `db` consume core types instead of duplicating them.
+- Apps (`web`, `api`) and `db` consume core types instead of duplicating them (DB enums sourced from core const arrays).
 - Environment config, secrets, and local DB workflow documented.
 
 ### Implement
@@ -118,7 +119,7 @@ packages/db ──imports──►  packages/core   (persistence maps to domain)
 
 - [x] Initialize Turborepo workspace (`turbo.json`, root `package.json`, workspaces)
 - [x] Create apps: `apps/web`, `apps/api`
-- [x] Create packages: `packages/core`, `packages/db` (and shared `typescript-config` / lint config as needed)
+- [x] Create packages: `packages/core`, `packages/db`, `packages/ui`, `packages/typescript-config`
 - [x] Turbo pipelines for `dev`, `build`, `lint`, `typecheck` (`test` pipeline defined; package tests arrive with features)
 - [x] TypeScript strict mode across packages
 - [x] Biome (lint + format), hoisted via workspace
@@ -127,45 +128,47 @@ packages/db ──imports──►  packages/core   (persistence maps to domain)
 
 **`packages/core` (domain layer)**
 
-- [x] Package scaffold exporting domain modules (e.g. `entities/`, `value-objects/`, `sports/`, `errors/`)
-- [x] Initial entity stubs aligned to PRD: `Activity`, `AthleteProfile`, `StravaConnection`, `Goal` (minimal shapes OK)
-- [x] Sport enum / classification types (Running, Padel, Cycling, Swimming, Walking, Hiking, Strength, Other)
+- [x] Package scaffold exporting domain modules (e.g. `entities/`, `value-objects/`, `errors/`)
+- [x] Initial entity stubs aligned to PRD: `Activity`, `AthleteProfile`, `StravaConnection`, `Goal` (minimal shapes OK; branded IDs)
+- [x] Sport enum / classification types (Running, Padel, Cycling, Swimming, Walking, Hiking, Strength, Other) — canonical `SPORTS` const + related domain enums exported for `db`/API reuse
 - [x] No framework imports in `core` (no React, Hono, Drizzle, Next)
+- [x] Domain errors (`DomainError`, `ValidationError`, `NotFoundError`); presentation helpers stay at UI/API boundaries
 
 **Frontend (`apps/web`)**
 
 - [x] Next.js + TypeScript + Tailwind CSS
-- [x] shadcn/ui base setup
+- [x] shadcn/ui base setup (`packages/ui` + app shell)
 - [x] App shell: layout, navigation placeholders, loading/empty/error states
 - [x] Design tokens / CSS variables aligned to product (avoid generic default look)
-- [x] Import domain types from `@pacepilot/core` (or chosen package name) only — do not redefine entities in the UI
+- [x] Import domain types from `@pacepilot/core` only — do not redefine entities in the UI
 
 **Backend (`apps/api`)**
 
 - [x] Hono API app in the monorepo
 - [x] Health check endpoint
 - [x] Request logging / error handling middleware
-- [x] Typed API responses; map HTTP DTOs ↔ `core` domain types at the boundary
+- [x] Typed API responses; map HTTP DTOs ↔ `core` domain types at the boundary (e.g. `/sports` returns `Sport[]`)
+- [x] Inngest jobs entry scaffolded (workers grow with sync phases)
 
 **Database (`packages/db`)**
 
-- [x] PostgreSQL (Supabase or Neon)
-- [x] Drizzle ORM schema + migrations workflow (scripts + config; generate first migration when DB is available)
-- [x] Schema maps persistence ↔ `packages/core` entities
+- [x] PostgreSQL provider chosen (Supabase or Neon) — connection via `DATABASE_URL`
+- [x] Drizzle ORM schema + migrations workflow (scripts + config; **first migration still to generate** when DB is available)
+- [x] Schema maps persistence ↔ `packages/core` entities (pg enums import core const arrays; mappers in `packages/db`)
 - [x] Seed script (optional for Phase 0)
 
 **Infrastructure**
 
 - [ ] Vercel project(s) wired for preview + production (monorepo-aware) — `vercel.json` present; project wiring pending
-- [x] Database connection pooling for serverless
-- [x] Background jobs provider chosen and scaffolded (**Inngest or Trigger.dev**)
+- [x] Database connection pooling for serverless (client scaffold in `packages/db`)
+- [x] Background jobs provider chosen and scaffolded (**Inngest**)
 
 ### Acceptance criteria
 
-- `turbo dev` (or documented root script) starts cleanly
-- `packages/core` builds and is importable from `web` and `api`
-- Deployed preview environment connects to a non-prod database — pending Vercel + non-prod DB wiring
-- One end-to-end “hello” path works (health + empty shell pages; authenticated page arrives in 0.2)
+- [x] `turbo dev` (or documented root script) starts cleanly
+- [x] `packages/core` builds and is importable from `web` and `api`
+- [ ] Deployed preview environment connects to a non-prod database — pending Vercel + non-prod DB wiring
+- [x] One end-to-end “hello” path works locally (API `/health` + `/sports`; web empty shell pages). Authenticated page arrives in 0.2
 
 ---
 
@@ -917,7 +920,7 @@ Use this if you want a concrete near-term sequence from zero:
 
 | Week | Focus | Phase |
 | --- | --- | --- |
-| 1 | Turborepo monorepo, `packages/core`, `apps/web` + `apps/api`, `packages/db`, Better Auth, deploy | 0.1–0.2 |
+| 1 | Finish 0.1 deploy wiring (Vercel + non-prod DB + first migration), then Better Auth | 0.1 remaining → 0.2 |
 | 2 | Strava OAuth + encrypted tokens + connection UI | 0.3 |
 | 3–4 | Historical import jobs + Activity normalization + timeline | 0.4 |
 | 5–6 | Metrics engine v1 (volume, frequency, intensity, load, PRs) | 0.5 |
@@ -937,7 +940,7 @@ You are ready to write code when:
 2. Architecture locked: **Turborepo monorepo** + **`packages/core` domain layer**  
 3. Strava API application credentials exist (or are requestable)  
 4. Postgres provider chosen (Supabase or Neon)  
-5. Background jobs provider chosen (Inngest or Trigger.dev)  
-6. Phase 0.1 checklist is the first implementation task list  
+5. Background jobs provider chosen (**Inngest**)  
+6. Phase 0.1 local foundation is in place; remaining 0.1 items are Vercel + non-prod DB + first migration  
 
-**Next concrete step:** implement Phase 0.1 (Turborepo + `packages/core` + apps), then 0.2 (auth), then 0.3 (Strava).
+**Next concrete step:** close Phase 0.1 deploy wiring (Vercel preview + non-prod DB + first Drizzle migration), then 0.2 (auth), then 0.3 (Strava).
