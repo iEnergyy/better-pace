@@ -452,6 +452,93 @@ Long-term differentiation:
 
 ---
 
+## Monorepo layout
+
+```text
+better-pace/
+├── apps/
+│   ├── web/          # Next.js + Tailwind + shadcn/ui
+│   └── api/          # Hono HTTP API (+ Inngest scaffold)
+├── packages/
+│   ├── core/         # Domain layer (entities, value objects)
+│   ├── db/           # Drizzle schema, client, mappers → core
+│   ├── ui/           # Shared shadcn components (@workspace/ui)
+│   └── typescript-config/
+├── biome.json
+├── turbo.json
+├── pnpm-workspace.yaml
+└── package.json
+```
+
+Package manager: **pnpm**. Build orchestration: **Turborepo**.
+
+Shared UI lives in `packages/ui`. Add components with:
+
+```bash
+pnpm dlx shadcn@latest add button -c packages/ui
+```
+
+Domain types live only in `@pacepilot/core`. Apps and `packages/db` import them — they do not redefine entities.
+
+---
+
+## Local development
+
+**Requirements:** Node.js ≥ 20, [pnpm](https://pnpm.io) 10.x
+
+```bash
+pnpm install
+cp .env.example .env                     # root — DATABASE_URL, BETTER_AUTH_*
+cp .env.example apps/web/.env.local      # Next.js loads auth + DB from here
+# Generate secret: openssl rand -base64 32 → BETTER_AUTH_SECRET (≥32 chars)
+pnpm db:generate && pnpm db:migrate      # first-time / after schema changes
+pnpm dev                                 # turbo: web (:3000) + api (:3001)
+```
+
+Useful scripts:
+
+| Script | What it does |
+| --- | --- |
+| `pnpm dev` | Start all apps via Turbo |
+| `pnpm build` | Build the workspace |
+| `pnpm typecheck` | TypeScript across packages |
+| `pnpm lint` | Biome check (lint + format verify) |
+| `pnpm format` | Biome check --write |
+| `pnpm db:generate` | Drizzle migration generate |
+| `pnpm db:migrate` | Apply migrations |
+| `pnpm db:push` | Push schema (dev) |
+| `pnpm db:studio` | Drizzle Studio |
+| `pnpm test:e2e` | Playwright e2e (`packages/e2e`, POM + fixtures) |
+
+**Hello path:** open `http://localhost:3000` → redirects to `/sign-in` when logged out. After signup, dashboard loads. API: `http://localhost:3001/health` and `/sports`.
+
+### E2E tests
+
+Auth flows live in [`packages/e2e`](packages/e2e) (Playwright TypeScript, page objects + fixtures):
+
+```bash
+pnpm --filter @pacepilot/e2e exec playwright install chromium
+pnpm test:e2e
+```
+
+`playwright.config.ts` reuses a running web app on `:3000`, or starts `pnpm --filter web dev` when needed.
+
+### Database
+
+Use **PostgreSQL** (Supabase or Neon). Prefer a **pooled** connection string for serverless (`DATABASE_URL`). Schema and migrations live in `packages/db` (Drizzle). Auth tables (`user`, `session`, `account`, `verification`) plus domain tables ship in the first migration.
+
+### Auth / Strava / jobs
+
+**Better Auth (0.2)** runs in `apps/web` (`/api/auth/*`, email/password). Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL=http://localhost:3000`. Signup creates a matching `athlete_profiles` row. Soft-delete on Settings marks the athlete profile deleted and signs out (full wipe in 0.8); the same credentials can still sign in afterward.
+
+Strava OAuth (0.3) and richer Inngest handlers land next. Inngest is scaffolded at `apps/api` (`/api/inngest`).
+
+### Vercel
+
+`vercel.json` targets the Next.js app (`apps/web`). Point env vars at a non-prod database for preview deployments. Deploy the Hono API as a separate Vercel project or Node service when you leave local-only.
+
+---
+
 ## Architecture
 
 ```text
