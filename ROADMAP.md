@@ -1,6 +1,6 @@
 # PacePilot — Implementation Roadmap
 
-**Status:** Pre-build  
+**Status:** Phase 0 in progress (0.1 foundation complete)  
 **Based on:** [README.md](./README.md), [PRD.md](./PRD.md)  
 **North star:** Useful Insights per Active Athlete  
 **Architecture:** Turborepo monorepo · domain models in `packages/core` (DDD domain layer)  
@@ -116,49 +116,49 @@ packages/db ──imports──►  packages/core   (persistence maps to domain)
 
 **Monorepo (Turborepo)**
 
-- [ ] Initialize Turborepo workspace (`turbo.json`, root `package.json`, workspaces)
-- [ ] Create apps: `apps/web`, `apps/api`
-- [ ] Create packages: `packages/core`, `packages/db` (and shared `typescript-config` / lint config as needed)
-- [ ] Turbo pipelines for `dev`, `build`, `lint`, `typecheck`, `test`
-- [ ] TypeScript strict mode across packages
-- [ ] ESLint + Prettier (or Biome), hoisted via workspace
-- [ ] `.env.example` with all required keys
-- [ ] README setup instructions (Turbo, local DB, Strava app, auth secrets)
+- [x] Initialize Turborepo workspace (`turbo.json`, root `package.json`, workspaces)
+- [x] Create apps: `apps/web`, `apps/api`
+- [x] Create packages: `packages/core`, `packages/db` (and shared `typescript-config` / lint config as needed)
+- [x] Turbo pipelines for `dev`, `build`, `lint`, `typecheck`, `test`
+- [x] TypeScript strict mode across packages
+- [x] Biome (lint + format), hoisted via workspace
+- [x] `.env.example` with all required keys
+- [x] README setup instructions (Turbo, local DB, Strava app, auth secrets)
 
 **`packages/core` (domain layer)**
 
-- [ ] Package scaffold exporting domain modules (e.g. `entities/`, `value-objects/`, `sports/`, `errors/`)
-- [ ] Initial entity stubs aligned to PRD: `Activity`, `AthleteProfile`, `StravaConnection`, `Goal` (minimal shapes OK)
-- [ ] Sport enum / classification types (Running, Padel, Cycling, Swimming, Walking, Hiking, Strength, Other)
-- [ ] No framework imports in `core` (no React, Hono, Drizzle, Next)
+- [x] Package scaffold exporting domain modules (e.g. `entities/`, `value-objects/`, `sports/`, `errors/`)
+- [x] Initial entity stubs aligned to PRD: `Activity`, `AthleteProfile`, `StravaConnection`, `Goal` (minimal shapes OK)
+- [x] Sport enum / classification types (Running, Padel, Cycling, Swimming, Walking, Hiking, Strength, Other)
+- [x] No framework imports in `core` (no React, Hono, Drizzle, Next)
 
 **Frontend (`apps/web`)**
 
-- [ ] Next.js + TypeScript + Tailwind CSS
-- [ ] shadcn/ui base setup
-- [ ] App shell: layout, navigation placeholders, loading/empty/error states
-- [ ] Design tokens / CSS variables aligned to product (avoid generic default look)
-- [ ] Import domain types from `@pacepilot/core` (or chosen package name) only — do not redefine entities in the UI
+- [x] Next.js + TypeScript + Tailwind CSS
+- [x] shadcn/ui base setup
+- [x] App shell: layout, navigation placeholders, loading/empty/error states
+- [x] Design tokens / CSS variables aligned to product (avoid generic default look)
+- [x] Import domain types from `@pacepilot/core` (or chosen package name) only — do not redefine entities in the UI
 
 **Backend (`apps/api`)**
 
-- [ ] Hono API app in the monorepo
-- [ ] Health check endpoint
-- [ ] Request logging / error handling middleware
-- [ ] Typed API responses; map HTTP DTOs ↔ `core` domain types at the boundary
+- [x] Hono API app in the monorepo
+- [x] Health check endpoint
+- [x] Request logging / error handling middleware
+- [x] Typed API responses; map HTTP DTOs ↔ `core` domain types at the boundary
 
 **Database (`packages/db`)**
 
-- [ ] PostgreSQL (Supabase or Neon)
-- [ ] Drizzle ORM schema + migrations workflow
-- [ ] Schema maps persistence ↔ `packages/core` entities
-- [ ] Seed script (optional for Phase 0)
+- [x] PostgreSQL (Supabase or Neon)
+- [x] Drizzle ORM schema + migrations workflow
+- [x] Schema maps persistence ↔ `packages/core` entities
+- [x] Seed script (optional for Phase 0)
 
 **Infrastructure**
 
-- [ ] Vercel project(s) wired for preview + production (monorepo-aware)
-- [ ] Database connection pooling for serverless
-- [ ] Background jobs provider chosen and scaffolded (**Inngest or Trigger.dev**)
+- [x] Vercel project(s) wired for preview + production (monorepo-aware)
+- [x] Database connection pooling for serverless
+- [x] Background jobs provider chosen and scaffolded (**Inngest or Trigger.dev**)
 
 ### Acceptance criteria
 

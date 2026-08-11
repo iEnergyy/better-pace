@@ -452,6 +452,75 @@ Long-term differentiation:
 
 ---
 
+## Monorepo layout
+
+```text
+better-pace/
+├── apps/
+│   ├── web/          # Next.js + Tailwind + shadcn/ui
+│   └── api/          # Hono HTTP API (+ Inngest scaffold)
+├── packages/
+│   ├── core/         # Domain layer (entities, value objects)
+│   ├── db/           # Drizzle schema, client, mappers → core
+│   ├── ui/           # Shared shadcn components (@workspace/ui)
+│   └── typescript-config/
+├── biome.json
+├── turbo.json
+├── pnpm-workspace.yaml
+└── package.json
+```
+
+Package manager: **pnpm**. Build orchestration: **Turborepo**.
+
+Shared UI lives in `packages/ui`. Add components with:
+
+```bash
+pnpm dlx shadcn@latest add button -c packages/ui
+```
+
+Domain types live only in `@pacepilot/core`. Apps and `packages/db` import them — they do not redefine entities.
+
+---
+
+## Local development
+
+**Requirements:** Node.js ≥ 20, [pnpm](https://pnpm.io) 10.x
+
+```bash
+pnpm install
+cp .env.example .env.local   # fill DATABASE_URL when you have a DB
+pnpm dev                     # turbo: web (:3000) + api (:3001)
+```
+
+Useful scripts:
+
+| Script | What it does |
+| --- | --- |
+| `pnpm dev` | Start all apps via Turbo |
+| `pnpm build` | Build the workspace |
+| `pnpm typecheck` | TypeScript across packages |
+| `pnpm lint` | Biome check (lint + format verify) |
+| `pnpm format` | Biome check --write |
+| `pnpm db:generate` | Drizzle migration generate |
+| `pnpm db:push` | Push schema (dev) |
+| `pnpm db:studio` | Drizzle Studio |
+
+**Hello path:** open `http://localhost:3000` (empty dashboard) and `http://localhost:3001/health` (API health). Sports catalog: `http://localhost:3001/sports`.
+
+### Database
+
+Use **PostgreSQL** (Supabase or Neon). Prefer a **pooled** connection string for serverless (`DATABASE_URL`). Schema and migrations live in `packages/db` (Drizzle).
+
+### Auth / Strava / jobs
+
+Placeholders are in `.env.example`. Better Auth (0.2), Strava OAuth (0.3), and Inngest handlers land in later Phase 0 workstreams. Inngest is scaffolded at `apps/api` (`/api/inngest`).
+
+### Vercel
+
+`vercel.json` targets the Next.js app (`apps/web`). Point env vars at a non-prod database for preview deployments. Deploy the Hono API as a separate Vercel project or Node service when you leave local-only.
+
+---
+
 ## Architecture
 
 ```text
