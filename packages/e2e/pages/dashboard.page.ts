@@ -16,4 +16,9 @@ export class DashboardPage extends BasePage {
     })
     await expect(this.brandHeading).toBeVisible()
   }
+
+  async signOut(): Promise<void> {
+    await this.signOutButton.click()
+    await expect(this.page).toHaveURL(/\/sign-in/)
+  }
 }
