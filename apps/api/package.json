@@ -7,12 +7,12 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc --noEmit",
     "start": "tsx src/index.ts",
+    "lint": "biome check .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.0",
     "@pacepilot/core": "workspace:*",
-    "@pacepilot/db": "workspace:*",
     "hono": "^4.9.6",
     "inngest": "^3.40.1"
   },

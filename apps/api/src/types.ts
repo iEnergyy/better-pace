@@ -1,3 +1,5 @@
+import type { Sport } from "@pacepilot/core"
+
 export type ApiErrorBody = {
   error: {
     code: string
@@ -20,5 +22,5 @@ export type HealthResponse = {
  * Domain types stay in `@pacepilot/core`; HTTP shapes are defined here.
  */
 export type SportsCatalogResponse = {
-  sports: string[]
+  sports: Sport[]
 }

@@ -4,7 +4,9 @@ import type {
   AthleteId,
   AthleteProfile,
   Goal,
+  GoalId,
   StravaConnection,
+  StravaConnectionId,
 } from "@pacepilot/core"
 import type {
   activities,
@@ -20,7 +22,7 @@ type GoalRow = typeof goals.$inferSelect
 
 export function toAthleteProfile(row: AthleteProfileRow): AthleteProfile {
   return {
-    id: row.id,
+    id: row.id as AthleteId,
     userId: row.userId,
     displayName: row.displayName,
     timezone: row.timezone,
@@ -53,8 +55,8 @@ export function toActivity(row: ActivityRow): Activity {
 
 export function toStravaConnection(row: StravaConnectionRow): StravaConnection {
   return {
-    id: row.id,
-    athleteId: row.athleteId,
+    id: row.id as StravaConnectionId,
+    athleteId: row.athleteId as AthleteId,
     stravaAthleteId: row.stravaAthleteId,
     accessTokenEncrypted: row.accessTokenEncrypted,
     refreshTokenEncrypted: row.refreshTokenEncrypted,
@@ -70,8 +72,8 @@ export function toStravaConnection(row: StravaConnectionRow): StravaConnection {
 
 export function toGoal(row: GoalRow): Goal {
   return {
-    id: row.id,
-    athleteId: row.athleteId,
+    id: row.id as GoalId,
+    athleteId: row.athleteId as AthleteId,
     sport: row.sport,
     title: row.title,
     metric: row.metric,

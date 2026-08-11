@@ -1,9 +1,9 @@
 import type { Sport } from "../value-objects/sport"
+import type { ActivityId, AthleteId } from "./ids"
 
-export type ActivityId = string & { readonly __brand: "ActivityId" }
-export type AthleteId = string & { readonly __brand: "AthleteId" }
+export const ACTIVITY_SOURCES = ["strava"] as const
 
-export type ActivitySource = "strava"
+export type ActivitySource = (typeof ACTIVITY_SOURCES)[number]
 
 /**
  * Domain Activity — framework-agnostic.

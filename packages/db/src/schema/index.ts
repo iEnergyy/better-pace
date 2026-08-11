@@ -1,4 +1,12 @@
 import {
+  ACTIVITY_SOURCES,
+  GOAL_METRICS,
+  GOAL_STATUSES,
+  PREFERRED_UNITS,
+  SPORTS,
+  STRAVA_SYNC_STATUSES,
+} from "@pacepilot/core"
+import {
   doublePrecision,
   integer,
   pgEnum,
@@ -8,43 +16,17 @@ import {
   uuid,
 } from "drizzle-orm/pg-core"
 
-export const preferredUnitsEnum = pgEnum("preferred_units", [
-  "metric",
-  "imperial",
-])
+export const preferredUnitsEnum = pgEnum("preferred_units", PREFERRED_UNITS)
 
-export const sportEnum = pgEnum("sport", [
-  "running",
-  "padel",
-  "cycling",
-  "swimming",
-  "walking",
-  "hiking",
-  "strength",
-  "other",
-])
+export const sportEnum = pgEnum("sport", SPORTS)
 
-export const syncStatusEnum = pgEnum("strava_sync_status", [
-  "idle",
-  "importing",
-  "synced",
-  "error",
-])
+export const syncStatusEnum = pgEnum("strava_sync_status", STRAVA_SYNC_STATUSES)
 
-export const goalStatusEnum = pgEnum("goal_status", [
-  "active",
-  "completed",
-  "abandoned",
-])
+export const goalStatusEnum = pgEnum("goal_status", GOAL_STATUSES)
 
-export const goalMetricEnum = pgEnum("goal_metric", [
-  "weekly_distance_meters",
-  "weekly_duration_seconds",
-  "weekly_activity_count",
-  "target_pace_seconds_per_km",
-])
+export const goalMetricEnum = pgEnum("goal_metric", GOAL_METRICS)
 
-export const activitySourceEnum = pgEnum("activity_source", ["strava"])
+export const activitySourceEnum = pgEnum("activity_source", ACTIVITY_SOURCES)
 
 /**
  * Athlete profile persistence — maps to `@pacepilot/core` AthleteProfile.

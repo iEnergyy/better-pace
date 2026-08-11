@@ -29,9 +29,6 @@ importers:
       '@pacepilot/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@pacepilot/db':
-        specifier: workspace:*
-        version: link:../../packages/db
       hono:
         specifier: ^4.9.6
         version: 4.13.1

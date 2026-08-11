@@ -119,7 +119,7 @@ packages/db ──imports──►  packages/core   (persistence maps to domain)
 - [x] Initialize Turborepo workspace (`turbo.json`, root `package.json`, workspaces)
 - [x] Create apps: `apps/web`, `apps/api`
 - [x] Create packages: `packages/core`, `packages/db` (and shared `typescript-config` / lint config as needed)
-- [x] Turbo pipelines for `dev`, `build`, `lint`, `typecheck`, `test`
+- [x] Turbo pipelines for `dev`, `build`, `lint`, `typecheck` (`test` pipeline defined; package tests arrive with features)
 - [x] TypeScript strict mode across packages
 - [x] Biome (lint + format), hoisted via workspace
 - [x] `.env.example` with all required keys
@@ -150,13 +150,13 @@ packages/db ──imports──►  packages/core   (persistence maps to domain)
 **Database (`packages/db`)**
 
 - [x] PostgreSQL (Supabase or Neon)
-- [x] Drizzle ORM schema + migrations workflow
+- [x] Drizzle ORM schema + migrations workflow (scripts + config; generate first migration when DB is available)
 - [x] Schema maps persistence ↔ `packages/core` entities
 - [x] Seed script (optional for Phase 0)
 
 **Infrastructure**
 
-- [x] Vercel project(s) wired for preview + production (monorepo-aware)
+- [ ] Vercel project(s) wired for preview + production (monorepo-aware) — `vercel.json` present; project wiring pending
 - [x] Database connection pooling for serverless
 - [x] Background jobs provider chosen and scaffolded (**Inngest or Trigger.dev**)
 
@@ -164,8 +164,8 @@ packages/db ──imports──►  packages/core   (persistence maps to domain)
 
 - `turbo dev` (or documented root script) starts cleanly
 - `packages/core` builds and is importable from `web` and `api`
-- Deployed preview environment connects to a non-prod database
-- One end-to-end “hello” path works (e.g. health + empty authenticated page)
+- Deployed preview environment connects to a non-prod database — pending Vercel + non-prod DB wiring
+- One end-to-end “hello” path works (health + empty shell pages; authenticated page arrives in 0.2)
 
 ---
 
