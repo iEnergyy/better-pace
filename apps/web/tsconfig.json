@@ -5,7 +5,9 @@
       "@/*": ["./*"],
       "@workspace/ui/*": ["../../packages/ui/src/*"],
       "@pacepilot/core": ["../../packages/core/src/index.ts"],
-      "@pacepilot/core/*": ["../../packages/core/src/*"]
+      "@pacepilot/core/*": ["../../packages/core/src/*"],
+      "@pacepilot/db": ["../../packages/db/src/index.ts"],
+      "@pacepilot/db/*": ["../../packages/db/src/*"]
     },
     "plugins": [
       {

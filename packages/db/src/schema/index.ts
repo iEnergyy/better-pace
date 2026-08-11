@@ -15,6 +15,9 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core"
+import { user } from "./auth"
+
+export * from "./auth"
 
 export const preferredUnitsEnum = pgEnum("preferred_units", PREFERRED_UNITS)
 
@@ -30,11 +33,14 @@ export const activitySourceEnum = pgEnum("activity_source", ACTIVITY_SOURCES)
 
 /**
  * Athlete profile persistence — maps to `@pacepilot/core` AthleteProfile.
- * Auth user table arrives with Better Auth in phase 0.2; userId is a string FK for now.
+ * 1:1 with Better Auth `user` (created on signup).
  */
 export const athleteProfiles = pgTable("athlete_profiles", {
   id: uuid("id").defaultRandom().primaryKey(),
-  userId: text("user_id").notNull().unique(),
+  userId: text("user_id")
+    .notNull()
+    .unique()
+    .references(() => user.id, { onDelete: "cascade" }),
   displayName: text("display_name").notNull(),
   timezone: text("timezone").notNull().default("UTC"),
   preferredUnits: preferredUnitsEnum("preferred_units")

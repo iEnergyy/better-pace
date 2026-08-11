@@ -9,6 +9,7 @@
     "format": "biome check --write .",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
+    "test:e2e": "pnpm --filter @pacepilot/e2e test",
     "db:generate": "pnpm --filter @pacepilot/db db:generate",
     "db:migrate": "pnpm --filter @pacepilot/db db:migrate",
     "db:push": "pnpm --filter @pacepilot/db db:push",

@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import { IBM_Plex_Mono, Outfit } from "next/font/google"
 import "@workspace/ui/globals.css"
 import { cn } from "@workspace/ui/lib/utils"
-import { AppShell } from "@/components/app-shell"
 import { ThemeProvider } from "@/components/theme-provider"
 
 const outfit = Outfit({
@@ -42,9 +41,7 @@ export default function RootLayout({
       )}
     >
       <body>
-        <ThemeProvider>
-          <AppShell>{children}</AppShell>
-        </ThemeProvider>
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   )

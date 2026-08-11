@@ -1,6 +1,6 @@
 # PacePilot — Implementation Roadmap
 
-**Status:** Phase 0 in progress (0.1 local foundation done; Vercel + non-prod DB wiring open)  
+**Status:** Phase 0 in progress (0.1 local foundation done; 0.2 auth done locally; Vercel + non-prod DB wiring open)  
 **Based on:** [README.md](./README.md), [PRD.md](./PRD.md)  
 **North star:** Useful Insights per Active Athlete  
 **Architecture:** Turborepo monorepo · domain models in `packages/core` (DDD domain layer)  
@@ -153,7 +153,7 @@ packages/db ──imports──►  packages/core   (persistence maps to domain)
 **Database (`packages/db`)**
 
 - [x] PostgreSQL provider chosen (Supabase or Neon) — connection via `DATABASE_URL`
-- [x] Drizzle ORM schema + migrations workflow (scripts + config; **first migration still to generate** when DB is available)
+- [x] Drizzle ORM schema + migrations workflow (scripts + config; first migration applied with auth tables in 0.2)
 - [x] Schema maps persistence ↔ `packages/core` entities (pg enums import core const arrays; mappers in `packages/db`)
 - [x] Seed script (optional for Phase 0)
 
@@ -168,7 +168,7 @@ packages/db ──imports──►  packages/core   (persistence maps to domain)
 - [x] `turbo dev` (or documented root script) starts cleanly
 - [x] `packages/core` builds and is importable from `web` and `api`
 - [ ] Deployed preview environment connects to a non-prod database — pending Vercel + non-prod DB wiring
-- [x] One end-to-end “hello” path works locally (API `/health` + `/sports`; web empty shell pages). Authenticated page arrives in 0.2
+- [x] One end-to-end “hello” path works locally (API `/health` + `/sports`; web empty shell pages). Authenticated page arrives in 0.2 — done in 0.2
 
 ---
 
@@ -182,11 +182,11 @@ packages/db ──imports──►  packages/core   (persistence maps to domain)
 
 **Auth (Better Auth)**
 
-- [ ] Email/password and/or magic link (pick one primary for Phase 0)
-- [ ] Session management
-- [ ] Protected API routes / middleware
-- [ ] Sign up, sign in, sign out UI
-- [ ] Account settings shell (profile display name, email)
+- [x] Email/password and/or magic link (pick one primary for Phase 0) — **email/password**
+- [x] Session management
+- [x] Protected API routes / middleware — Next.js `proxy.ts` + `(app)` layout session check
+- [x] Sign up, sign in, sign out UI
+- [x] Account settings shell (profile display name, email)
 
 **Data model** (`packages/core`)
 
@@ -195,15 +195,14 @@ User
   └── AthleteProfile (1:1, created on signup)
 ```
 
-- [ ] `User` table (via Better Auth schema + app fields)
-- [ ] `AthleteProfile` domain type in `packages/core` + Drizzle mapping in `packages/db` (minimal: displayName, timezone, preferred units, createdAt)
-- [ ] Soft delete / account deletion stub (full deletion in 0.8)
+- [x] `User` table (via Better Auth schema + app fields)
+- [x] `AthleteProfile` domain type in `packages/core` + Drizzle mapping in `packages/db` (minimal: displayName, timezone, preferred units, createdAt) — existed from 0.1; wired to auth user on signup
+- [x] Soft delete / account deletion stub (full deletion in 0.8)
 
 ### Acceptance criteria
 
-- Founder can create an account and stay signed in across refresh
-- Unauthenticated users cannot access dashboard routes
-
+- [x] Founder can create an account and stay signed in across refresh
+- [x] Unauthenticated users cannot access dashboard routes
 ---
 
 ## 0.3 Strava connection
@@ -943,4 +942,4 @@ You are ready to write code when:
 5. Background jobs provider chosen (**Inngest**)  
 6. Phase 0.1 local foundation is in place; remaining 0.1 items are Vercel + non-prod DB + first migration  
 
-**Next concrete step:** close Phase 0.1 deploy wiring (Vercel preview + non-prod DB + first Drizzle migration), then 0.2 (auth), then 0.3 (Strava).
+**Next concrete step:** close Phase 0.1 Vercel preview wiring if still open, then 0.3 (Strava).

@@ -6,7 +6,7 @@ export type PreferredUnits = (typeof PREFERRED_UNITS)[number]
 
 /**
  * Athlete identity owned by a user account (1:1).
- * Created on signup in later auth phase; stubbed here for domain shape.
+ * Created on signup via Better Auth databaseHooks.
  */
 export interface AthleteProfile {
   id: AthleteId

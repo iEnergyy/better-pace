@@ -31,7 +31,7 @@ export default function Page() {
 
       <EmptyState
         title="No activities yet"
-        description="Connect Strava in a later Phase 0 step to import your history. Auth, sync, and metrics land after this foundation."
+        description="Connect Strava in a later Phase 0 step to import your history. Sync and metrics land after auth."
         actionLabel="Connect Strava (soon)"
       />
     </div>

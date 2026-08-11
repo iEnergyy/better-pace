@@ -1,5 +1,5 @@
 /**
- * Optional Phase 0 seed — no-op until DATABASE_URL is configured.
+ * Optional Phase 0 seed — founder fixtures can be added after auth is live.
  * Run: pnpm --filter @pacepilot/db db:seed
  */
 async function seed() {
@@ -9,7 +9,7 @@ async function seed() {
   }
 
   console.log(
-    "Seed placeholder ready. Add founder athlete fixtures when auth (0.2) lands."
+    "Seed placeholder ready. Prefer signing up via the web app for Phase 0."
   )
 }
 
