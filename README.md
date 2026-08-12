@@ -530,7 +530,23 @@ Use **Neon PostgreSQL**. Prefer a **pooled** connection string for serverless (`
 
 **Better Auth (0.2)** runs in `apps/web` (`/api/auth/*`, email/password). Set `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL=http://localhost:3000`. Signup creates a matching `athlete_profiles` row. Soft-delete on Settings marks the athlete profile deleted and signs out (full wipe in 0.8); the same credentials can still sign in afterward.
 
-Strava OAuth (0.3) and richer Inngest handlers land next. Inngest is scaffolded at `apps/api` (`/api/inngest`).
+**Strava OAuth (0.3)** also runs in `apps/web`:
+
+1. Create an API application at [Strava API settings](https://www.strava.com/settings/api).
+2. Set **Authorization Callback Domain** to `localhost` for local dev (Strava whitelists it). Deployed envs use your real domain.
+3. Put credentials in root `.env`:
+   - `STRAVA_CLIENT_ID` / `STRAVA_CLIENT_SECRET`
+   - `STRAVA_REDIRECT_URI=http://localhost:3000/api/strava/callback` (must match the app callback path)
+   - `TOKEN_ENCRYPTION_KEY` — `openssl rand -base64 32` (AES-256-GCM at rest)
+4. Scopes requested: `read`, `activity:read_all`, `profile:read_all` (no write).
+5. Connect from **Settings** or the dashboard empty state (`/api/strava/connect` → Strava → `/api/strava/callback`).
+6. On success, `syncStatus` becomes `importing` and an Inngest event `strava/import.historical` is emitted when `INNGEST_EVENT_KEY` is set (handler lands in **0.4**).
+
+**Disconnect:** PacePilot calls Strava deauthorize (best-effort), clears encrypted tokens, and sets `disconnectedAt`. **Previously imported activities are kept** until full account deletion (0.8). Reconnect reuses the same `strava_connections` row.
+
+Tokens never appear in client responses or UI — only a public status DTO is rendered.
+
+Inngest remains scaffolded at `apps/api` (`/api/inngest`).
 
 ### Vercel
 

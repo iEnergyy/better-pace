@@ -9,6 +9,13 @@ export class SettingsPage extends BasePage {
     name: "Soft-delete account",
   })
   readonly savedMessage = this.page.getByText("Display name saved.")
+  readonly connectStravaLink = this.page.getByRole("link", {
+    name: "Connect Strava",
+  })
+  readonly disconnectStravaButton = this.page.getByRole("button", {
+    name: "Disconnect Strava",
+  })
+  readonly stravaHeading = this.page.getByRole("heading", { name: "Strava" })
 
   async open(): Promise<void> {
     await this.goto("/settings")
