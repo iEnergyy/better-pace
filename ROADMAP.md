@@ -1,6 +1,6 @@
 # PacePilot — Implementation Roadmap
 
-**Status:** Phase 0 in progress (0.1 local foundation done; 0.2 auth done; 0.3 Strava connection done; 0.4 activity sync done locally; Vercel + non-prod DB wiring open)  
+**Status:** Phase 0 in progress (0.1–0.4 done; 0.5 metrics engine in progress; Vercel + non-prod DB wiring open)  
 **Based on:** [README.md](./README.md), [PRD.md](./PRD.md)  
 **North star:** Useful Insights per Active Athlete  
 **Architecture:** Turborepo monorepo · domain models in `packages/core` (DDD domain layer)  
@@ -316,19 +316,19 @@ Activity {
 
 **Core calculations (versioned)**
 
-- [ ] Daily / weekly / monthly training volume
+- [x] Daily / weekly / monthly training volume
   - By sport and total
   - Distance-based sports vs duration-based sports (padel/strength)
-- [ ] Training frequency (sessions per week / streak / consistency score)
-- [ ] Intensity classification: Easy / Moderate / Hard
+- [x] Training frequency (sessions per week / streak / consistency score)
+- [x] Intensity classification: Easy / Moderate / Hard
   - Transparent rules (HR zones if available, else pace/relative effort proxies)
   - Document methodology + version (`intensity.v1`)
-- [ ] Training load (internal metric)
+- [x] Training load (internal metric)
   - Transparent, deterministic, versioned (`load.v1`)
   - Explicit disclaimer: not a medical measurement
-- [ ] High-intensity clusters / consecutive hard days
-- [ ] Fitness / recovery / performance trend placeholders (simple moving windows for Phase 0)
-- [ ] Personal records:
+- [x] High-intensity clusters / consecutive hard days
+- [x] Fitness / recovery / performance trend placeholders (simple moving windows for Phase 0)
+- [x] Personal records:
   - Running: fastest 1K / 5K / 10K, longest run
   - Cycling: fastest / longest
   - Swimming: longest / fastest where data permits
@@ -336,23 +336,23 @@ Activity {
 
 **Derived entities**
 
-- [ ] `ActivityMetric`
-- [ ] `TrainingSummary` (week / month)
-- [ ] `PersonalRecord`
-- [ ] `AthleteProfile` rollups refreshed after sync
+- [x] `ActivityMetric`
+- [x] `TrainingSummary` (week / month)
+- [x] `PersonalRecord`
+- [x] `AthleteProfile` rollups refreshed after sync
 
 **Athlete profile fields to populate**
 
-- sports, trainingFrequency, weeklyVolume, trainingLoad
-- consistencyScore, fitnessTrend, recoveryTrend, performanceTrend
-- personalRecords
+- [x] sports, trainingFrequency, weeklyVolume, trainingLoad
+- [x] consistencyScore, fitnessTrend, recoveryTrend, performanceTrend
+- [x] personalRecords
 
 ### Acceptance criteria
 
-- Spot-check 20+ personal activities against Strava numbers (distance, duration, HR)
-- Weekly totals match manual expectation within documented tolerance
-- Intensity labels feel sane for known easy/hard sessions
-- Misleading metrics are logged in a “validation notes” list for Phase 1 fixes
+- [ ] Spot-check 20+ personal activities against Strava numbers (distance, duration, HR) — *founder dogfood*
+- [ ] Weekly totals match manual expectation within documented tolerance — *founder dogfood*
+- [ ] Intensity labels feel sane for known easy/hard sessions — *founder dogfood*
+- [x] Misleading metrics are logged in a “validation notes” list for Phase 1 fixes — [`docs/validation-notes.md`](./docs/validation-notes.md)
 
 ---
 

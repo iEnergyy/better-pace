@@ -1,4 +1,5 @@
 export * from "./activities"
 export * from "./client"
 export * from "./mappers"
+export * from "./metrics"
 export * from "./schema/index"

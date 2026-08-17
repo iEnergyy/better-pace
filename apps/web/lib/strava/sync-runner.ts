@@ -308,10 +308,13 @@ export async function runHistoricalImport(
         syncStatus: "synced",
         lastError: null,
         lastSyncAt: new Date(),
-        syncProgress: null,
+        syncProgress: "Computing metrics…",
       },
       database
     )
+    const { recomputeAthleteMetrics } = await import("@/lib/metrics/recompute")
+    await recomputeAthleteMetrics(athleteId, database, "full")
+    await setSyncStatus(athleteId, { syncProgress: null }, database)
     return { ok: true, imported }
   } catch (error) {
     const message = safeErrorMessage(error, "Historical import failed")
@@ -365,10 +368,13 @@ export async function runRecentSync(
         syncStatus: "synced",
         lastError: null,
         lastSyncAt: new Date(),
-        syncProgress: null,
+        syncProgress: "Computing metrics…",
       },
       database
     )
+    const { recomputeAthleteMetrics } = await import("@/lib/metrics/recompute")
+    await recomputeAthleteMetrics(athleteId, database, "incremental")
+    await setSyncStatus(athleteId, { syncProgress: null }, database)
     return { ok: true, imported }
   } catch (error) {
     const message = safeErrorMessage(error, "Recent sync failed")
