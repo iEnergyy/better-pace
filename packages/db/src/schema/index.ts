@@ -9,10 +9,12 @@ import {
 import {
   doublePrecision,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core"
 import { user } from "./auth"
@@ -73,31 +75,49 @@ export const stravaConnections = pgTable("strava_connections", {
   disconnectedAt: timestamp("disconnected_at", { withTimezone: true }),
   lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
   lastError: text("last_error"),
+  syncProgress: text("sync_progress"),
 })
 
-export const activities = pgTable("activities", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  athleteId: uuid("athlete_id")
-    .notNull()
-    .references(() => athleteProfiles.id),
-  source: activitySourceEnum("source").notNull().default("strava"),
-  externalId: text("external_id").notNull(),
-  sport: sportEnum("sport").notNull(),
-  name: text("name").notNull(),
-  startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
-  durationSeconds: integer("duration_seconds").notNull(),
-  distanceMeters: doublePrecision("distance_meters"),
-  elevationGainMeters: doublePrecision("elevation_gain_meters"),
-  averageHeartRate: integer("average_heart_rate"),
-  maxHeartRate: integer("max_heart_rate"),
-  averagePaceSecondsPerKm: doublePrecision("average_pace_seconds_per_km"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-})
+export const activities = pgTable(
+  "activities",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    athleteId: uuid("athlete_id")
+      .notNull()
+      .references(() => athleteProfiles.id),
+    source: activitySourceEnum("source").notNull().default("strava"),
+    externalId: text("external_id").notNull(),
+    sport: sportEnum("sport").notNull(),
+    name: text("name").notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+    durationSeconds: integer("duration_seconds").notNull(),
+    distanceMeters: doublePrecision("distance_meters"),
+    elevationGainMeters: doublePrecision("elevation_gain_meters"),
+    averageHeartRate: integer("average_heart_rate"),
+    maxHeartRate: integer("max_heart_rate"),
+    averagePaceSecondsPerKm: doublePrecision("average_pace_seconds_per_km"),
+    calories: doublePrecision("calories"),
+    averageSpeedMetersPerSecond: doublePrecision(
+      "average_speed_meters_per_second"
+    ),
+    maxSpeedMetersPerSecond: doublePrecision("max_speed_meters_per_second"),
+    rawData: jsonb("raw_data"),
+    metricsVersion: text("metrics_version").notNull().default("activity.v1"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("activities_athlete_source_external_uid").on(
+      table.athleteId,
+      table.source,
+      table.externalId
+    ),
+  ]
+)
 
 export const goals = pgTable("goals", {
   id: uuid("id").defaultRandom().primaryKey(),

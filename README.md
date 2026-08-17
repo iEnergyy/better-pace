@@ -462,6 +462,7 @@ better-pace/
 ├── packages/
 │   ├── core/         # Domain layer (entities, value objects)
 │   ├── db/           # Drizzle schema, client, mappers → core
+│   ├── strava/       # Strava HTTP adapter + token crypto (@pacepilot/strava)
 │   ├── ui/           # Shared shadcn components (@workspace/ui)
 │   └── typescript-config/
 ├── biome.json
@@ -540,13 +541,15 @@ Use **Neon PostgreSQL**. Prefer a **pooled** connection string for serverless (`
    - `TOKEN_ENCRYPTION_KEY` — `openssl rand -base64 32` (AES-256-GCM at rest)
 4. Scopes requested: `read`, `activity:read_all`, `profile:read_all` (no write).
 5. Connect from **Settings** or the dashboard empty state (`/api/strava/connect` → Strava → `/api/strava/callback`).
-6. On success, `syncStatus` becomes `importing` and an Inngest event `strava/import.historical` is emitted when `INNGEST_EVENT_KEY` is set (handler lands in **0.4**).
+6. On success, `syncStatus` becomes `importing` and a **Next.js** historical import runs after the redirect (`after()` — no Inngest required for Phase 0).
+7. After the first import, click **Update** (Settings or Activities) to pull recent activities — **on-demand only; no background poll**.
+8. Shared Strava client + AES token helpers live in `@pacepilot/strava` (used by web OAuth + sync).
 
 **Disconnect:** PacePilot calls Strava deauthorize (best-effort), clears encrypted tokens, and sets `disconnectedAt`. **Previously imported activities are kept** until full account deletion (0.8). Reconnect reuses the same `strava_connections` row.
 
 Tokens never appear in client responses or UI — only a public status DTO is rendered.
 
-Inngest remains scaffolded at `apps/api` (`/api/inngest`).
+**Jobs:** Phase 0 founder sync runs **in `apps/web`** (server actions + `after()`). Inngest remains scaffolded at `apps/api` for later multi-user / long-running workers — **not required** to import activities today. `INNGEST_*` env vars are optional.
 
 ### Vercel
 

@@ -48,6 +48,11 @@ export function toActivity(row: ActivityRow): Activity {
     averageHeartRate: row.averageHeartRate,
     maxHeartRate: row.maxHeartRate,
     averagePaceSecondsPerKm: row.averagePaceSecondsPerKm,
+    calories: row.calories,
+    averageSpeedMetersPerSecond: row.averageSpeedMetersPerSecond,
+    maxSpeedMetersPerSecond: row.maxSpeedMetersPerSecond,
+    rawData: row.rawData ?? null,
+    metricsVersion: row.metricsVersion,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   }
@@ -67,6 +72,7 @@ export function toStravaConnection(row: StravaConnectionRow): StravaConnection {
     disconnectedAt: row.disconnectedAt,
     lastSyncAt: row.lastSyncAt,
     lastError: row.lastError,
+    syncProgress: row.syncProgress,
   }
 }
 

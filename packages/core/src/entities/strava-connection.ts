@@ -38,6 +38,8 @@ export interface StravaConnection {
   disconnectedAt: Date | null
   lastSyncAt: Date | null
   lastError: string | null
+  /** Human-readable import progress while syncStatus is importing. */
+  syncProgress: string | null
 }
 
 /**
@@ -52,6 +54,9 @@ export interface StravaConnectionPublic {
   disconnectedAt: Date | null
   lastSyncAt: Date | null
   lastError: string | null
+  syncProgress: string | null
+  /** Activity count for this athlete (filled by UI status helpers). */
+  importedCount?: number
 }
 
 export function isStravaConnected(
@@ -61,9 +66,10 @@ export function isStravaConnected(
 }
 
 export function toPublicStravaConnection(
-  connection: StravaConnection
+  connection: StravaConnection,
+  extras?: { importedCount?: number }
 ): StravaConnectionPublic {
-  return {
+  const pub: StravaConnectionPublic = {
     athleteId: connection.athleteId,
     stravaAthleteId: connection.stravaAthleteId,
     scopes: connection.scopes,
@@ -72,5 +78,10 @@ export function toPublicStravaConnection(
     disconnectedAt: connection.disconnectedAt,
     lastSyncAt: connection.lastSyncAt,
     lastError: connection.lastError,
+    syncProgress: connection.syncProgress,
   }
+  if (extras?.importedCount != null) {
+    pub.importedCount = extras.importedCount
+  }
+  return pub
 }

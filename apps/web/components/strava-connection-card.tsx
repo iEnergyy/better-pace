@@ -12,8 +12,13 @@ import {
 } from "@workspace/ui/components/card"
 import { cn } from "@workspace/ui/lib/utils"
 import { useRouter } from "next/navigation"
-import { useState, useTransition } from "react"
-import { disconnectStrava } from "@/lib/actions/strava"
+import { useEffect, useRef, useState, useTransition } from "react"
+import { useStravaLiveStatus } from "@/hooks/use-strava-live-status"
+import {
+  disconnectStrava,
+  retryStravaImport,
+  updateStravaActivities,
+} from "@/lib/actions/strava"
 
 export type StravaConnectionCardProps = {
   connected: boolean
@@ -21,7 +26,10 @@ export type StravaConnectionCardProps = {
   syncStatus: string | null
   scopes: string[]
   connectedAt: string | null
+  lastSyncAt: string | null
   lastError: string | null
+  importedCount: number
+  syncProgress: string | null
   flash: "connected" | "error" | null
   flashReason: string | null
 }
@@ -31,7 +39,7 @@ function flashMessage(
   reason: string | null
 ): string | null {
   if (flash === "connected") {
-    return "Strava connected. Historical import will start when sync jobs land (0.4)."
+    return "Strava connected. Historical import is starting — activities will appear on your timeline."
   }
   if (flash === "error") {
     switch (reason) {
@@ -51,25 +59,65 @@ function flashMessage(
 }
 
 export function StravaConnectionCard({
-  connected,
+  connected: initialConnected,
   stravaAthleteId,
-  syncStatus,
+  syncStatus: initialSyncStatus,
   scopes,
   connectedAt,
-  lastError,
+  lastSyncAt: initialLastSyncAt,
+  lastError: initialLastError,
+  importedCount: initialImportedCount,
+  syncProgress: initialSyncProgress,
   flash,
   flashReason,
 }: StravaConnectionCardProps) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  const [forceImporting, setForceImporting] = useState(false)
   const notice = flashMessage(flash, flashReason)
+  const effectiveInitialStatus =
+    forceImporting || initialSyncStatus === "importing"
+      ? "importing"
+      : initialSyncStatus
+  const live = useStravaLiveStatus(
+    initialConnected && effectiveInitialStatus === "importing",
+    {
+      connected: initialConnected,
+      syncStatus: effectiveInitialStatus,
+      lastSyncAt: initialLastSyncAt,
+      lastError: initialLastError,
+      importedCount: initialImportedCount,
+      syncProgress: forceImporting
+        ? (initialSyncProgress ?? "Starting…")
+        : initialSyncProgress,
+    }
+  )
 
-  function onDisconnect() {
+  const connected = live.connected || initialConnected
+  const syncStatus = live.syncStatus ?? effectiveInitialStatus
+  const lastSyncAt = live.lastSyncAt ?? initialLastSyncAt
+  const lastError = live.lastError ?? initialLastError
+  const importedCount = live.importedCount
+  const syncProgress = live.syncProgress ?? initialSyncProgress
+  const importing = syncStatus === "importing"
+  const wasImporting = useRef(importing)
+
+  useEffect(() => {
+    if (wasImporting.current && !importing) {
+      setForceImporting(false)
+      router.refresh()
+    }
+    wasImporting.current = importing
+  }, [importing, router])
+
+  function run(action: () => Promise<{ ok?: true; error?: string }>) {
     setError(null)
+    setForceImporting(true)
     startTransition(async () => {
-      const result = await disconnectStrava()
+      const result = await action()
       if ("error" in result && result.error) {
+        setForceImporting(false)
         setError(result.error)
         return
       }
@@ -83,7 +131,8 @@ export function StravaConnectionCard({
         <CardTitle>Strava</CardTitle>
         <CardDescription>
           Connect your Strava account to import activities. Tokens are encrypted
-          at rest and never shown here.
+          at rest and never shown here. New activities sync when you click
+          Update — there is no background poll.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
@@ -107,6 +156,21 @@ export function StravaConnectionCard({
                 <Badge variant="outline">Sync: {syncStatus}</Badge>
               ) : null}
             </div>
+            <p className="text-muted-foreground">
+              {importedCount} {importedCount === 1 ? "activity" : "activities"}{" "}
+              imported
+              {lastSyncAt
+                ? ` · last sync ${new Date(lastSyncAt).toLocaleString()}`
+                : null}
+            </p>
+            {importing ? (
+              <p
+                className="text-primary text-sm font-medium"
+                aria-live="polite"
+              >
+                {syncProgress ?? "Syncing with Strava…"}
+              </p>
+            ) : null}
             {stravaAthleteId ? (
               <p className="text-muted-foreground">
                 Athlete ID {stravaAthleteId}
@@ -136,16 +200,39 @@ export function StravaConnectionCard({
           </p>
         )}
       </CardContent>
-      <CardFooter className="gap-2">
+      <CardFooter className="flex flex-wrap gap-2">
         {connected ? (
-          <Button
-            type="button"
-            variant="destructive"
-            disabled={pending}
-            onClick={onDisconnect}
-          >
-            {pending ? "Disconnecting…" : "Disconnect Strava"}
-          </Button>
+          <>
+            {syncStatus === "error" || importing ? (
+              <Button
+                type="button"
+                disabled={pending}
+                onClick={() => run(retryStravaImport)}
+              >
+                {pending
+                  ? "Retrying…"
+                  : importing
+                    ? "Restart import"
+                    : "Retry import"}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                disabled={pending}
+                onClick={() => run(updateStravaActivities)}
+              >
+                {pending ? "Updating…" : "Update"}
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={pending}
+              onClick={() => run(disconnectStrava)}
+            >
+              {pending ? "Working…" : "Disconnect Strava"}
+            </Button>
+          </>
         ) : (
           <a
             href="/api/strava/connect"
