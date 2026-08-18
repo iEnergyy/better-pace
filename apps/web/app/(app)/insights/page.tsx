@@ -1,35 +1,22 @@
-import type { AthleteId, PersonalRecord } from "@pacepilot/core"
+import type { AthleteId, PersonalRecord, PreferredUnits } from "@pacepilot/core"
 import { startOfIsoWeekDate } from "@pacepilot/core"
 import { athleteProfiles, getAthleteInsightsBundle } from "@pacepilot/db"
 import { Badge } from "@workspace/ui/components/badge"
 import { eq } from "drizzle-orm"
+import Link from "next/link"
 import { EmptyState } from "@/components/empty-state"
 import { RecomputeMetricsButton } from "@/components/recompute-metrics-button"
 import { db } from "@/lib/db"
+import { formatDistance, formatDuration } from "@/lib/format"
 import { requireSession } from "@/lib/session"
 import { getAthleteIdForUser } from "@/lib/strava/connection"
 
 export const dynamic = "force-dynamic"
 
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  if (h > 0) return `${h}h ${m}m`
-  return `${m}m`
-}
-
-function formatDistance(meters: number, units: "metric" | "imperial"): string {
-  if (units === "imperial") {
-    const miles = meters / 1609.344
-    return `${miles.toFixed(1)} mi`
-  }
-  return `${(meters / 1000).toFixed(1)} km`
-}
-
-function formatPrValue(pr: PersonalRecord): string {
+function formatPrValue(pr: PersonalRecord, units: PreferredUnits): string {
   switch (pr.unit) {
     case "meters":
-      return formatDistance(pr.value, "metric")
+      return formatDistance(pr.value, units) ?? String(pr.value)
     case "seconds": {
       const m = Math.floor(pr.value / 60)
       const s = Math.round(pr.value % 60)
@@ -40,7 +27,9 @@ function formatPrValue(pr: PersonalRecord): string {
     case "load":
       return `${pr.value.toFixed(0)} load`
     case "meters_per_second":
-      return `${(pr.value * 3.6).toFixed(1)} km/h`
+      return units === "imperial"
+        ? `${(pr.value * 2.236936).toFixed(1)} mph`
+        : `${(pr.value * 3.6).toFixed(1)} km/h`
     default:
       return String(pr.value)
   }
@@ -78,15 +67,37 @@ export default async function InsightsPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Insights</h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Deterministic metrics from your synced activities (no AI).
+              Deep-dive metrics, PRs, and recompute — the home dashboard is at{" "}
+              <Link href="/" className="underline underline-offset-2">
+                Dashboard
+              </Link>
+              .
             </p>
           </div>
           <RecomputeMetricsButton />
         </div>
         <EmptyState
           title="No metrics yet"
-          description="Import or update Strava activities, then recompute metrics. Full dashboard polish lands in 0.6."
+          description="Import or update Strava activities, then recompute metrics from here or the dashboard Update control."
         />
+        <nav
+          aria-label="Period summaries"
+          className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm"
+        >
+          <span className="text-muted-foreground">Summaries</span>
+          <Link
+            href="/summaries/week"
+            className="font-medium underline-offset-4 hover:underline"
+          >
+            This week
+          </Link>
+          <Link
+            href="/summaries/month"
+            className="font-medium underline-offset-4 hover:underline"
+          >
+            This month
+          </Link>
+        </nav>
       </div>
     )
   }
@@ -99,21 +110,51 @@ export default async function InsightsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Insights</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Validation view for Phase 0.5 — not a medical measurement. Full
-            dashboard is 0.6.
+            Deep-dive for PRs, rollups, and recompute. Daily “how am I doing?”
+            lives on the{" "}
+            <Link href="/" className="underline underline-offset-2">
+              Dashboard
+            </Link>
+            . Not a medical measurement.
           </p>
         </div>
         <RecomputeMetricsButton />
       </div>
 
+      <nav
+        aria-label="Period summaries"
+        className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm"
+      >
+        <span className="text-muted-foreground">Summaries</span>
+        <Link
+          href="/summaries/week"
+          className="font-medium underline-offset-4 hover:underline"
+        >
+          This week
+        </Link>
+        <Link
+          href="/summaries/month"
+          className="font-medium underline-offset-4 hover:underline"
+        >
+          This month
+        </Link>
+      </nav>
+
       {week ? (
         <section className="flex flex-col gap-3">
-          <h2 className="text-lg font-medium">This week</h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-medium">This week</h2>
+            <Link
+              href="/summaries/week"
+              className="text-muted-foreground text-sm underline-offset-4 hover:underline"
+            >
+              Full week summary
+            </Link>
+          </div>
           <p className="text-muted-foreground text-sm">
             {week.sessionCount} sessions · {formatDuration(week.totalDurationSeconds)}{" "}
-            total ·{" "}
-            {formatDistance(week.totalDistanceMeters, units)} distance sports ·
-            load {week.totalLoad.toFixed(0)}
+            total · {formatDistance(week.totalDistanceMeters, units)} distance
+            sports · load {week.totalLoad.toFixed(0)}
           </p>
           {week.highIntensityCluster ? (
             <p className="text-sm text-amber-700 dark:text-amber-400">
@@ -166,7 +207,7 @@ export default async function InsightsPage() {
               >
                 <Badge variant="outline">{pr.sport}</Badge>
                 <span className="font-medium">{pr.kind.replaceAll("_", " ")}</span>
-                <span>{formatPrValue(pr)}</span>
+                <span>{formatPrValue(pr, units)}</span>
                 {pr.estimated ? (
                   <Badge variant="secondary">estimated</Badge>
                 ) : null}

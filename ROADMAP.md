@@ -366,35 +366,40 @@ Activity {
 
 **Dashboard (“Good morning” view)**
 
-- [ ] This week: training load, consistency, fitness/recovery trends
-- [ ] Activity count, total training time, sports touched
-- [ ] Rule-based insight cards (templates, not LLM), e.g.:
+- [x] This week: training load, consistency, fitness/recovery trends
+- [x] Activity count, total training time, sports touched
+- [x] Rule-based insight cards (templates, not LLM), e.g.:
   - Volume up/down vs last week
   - High-intensity cluster warning
   - Cross-sport load note (running km looks low but total load is high because of padel)
-- [ ] Units: km / mi preference
+  - Stretch: new PR / consistency / recovery pressure
+- [x] Units: km / mi preference (Settings + display)
 
 **Activity timeline**
 
-- [ ] Chronological list
-- [ ] Filters: sport, date range, intensity, duration
-- [ ] Activity detail page (core metrics + sport-specific fields)
+- [x] Chronological list
+- [x] Filters: sport, date range, intensity, duration
+- [x] Activity detail page (core metrics + sport-specific fields + Strava deep link)
 
 **Summaries**
 
-- [ ] Weekly summary page
-- [ ] Monthly summary page
+- [x] Weekly summary page (`/summaries/week`)
+- [x] Monthly summary page (`/summaries/month`)
 
 **Running intelligence (deepest for V1)**
 
-- [ ] Pace trends, volume trends
-- [ ] Easy vs hard / long-run identification (heuristic)
-- [ ] Basic PR highlighting
+- [x] Pace trends, volume trends
+- [x] Easy vs hard / long-run identification (heuristic)
+- [x] Basic PR highlighting
 
 **Padel intelligence (physiological only)**
 
-- [ ] Duration, HR, calories, frequency, load, trends
-- [ ] No fake match-score claims
+- [x] Duration, HR, calories, frequency, load, trends
+- [x] No fake match-score claims
+
+**Also**
+
+- [x] Insights kept as deep-dive (PRs, recompute, methodology) — not merged into home
 
 ### Acceptance criteria
 

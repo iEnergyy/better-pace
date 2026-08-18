@@ -57,6 +57,7 @@ export default async function SettingsPage({
       <AccountSettings
         email={session.user.email}
         displayName={profile?.displayName ?? session.user.name}
+        preferredUnits={profile?.preferredUnits ?? "metric"}
         deletedAt={profile?.deletedAt ?? null}
       />
     </div>

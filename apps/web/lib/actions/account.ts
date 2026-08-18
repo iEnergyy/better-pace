@@ -11,6 +11,11 @@ import { requireSession } from "@/lib/session"
 export async function updateDisplayName(formData: FormData) {
   const session = await requireSession()
   const displayName = String(formData.get("displayName") ?? "").trim()
+  const preferredUnitsRaw = String(formData.get("preferredUnits") ?? "").trim()
+  const preferredUnits =
+    preferredUnitsRaw === "imperial" || preferredUnitsRaw === "metric"
+      ? preferredUnitsRaw
+      : null
 
   if (!displayName) {
     return { error: "Display name is required" }
@@ -22,6 +27,7 @@ export async function updateDisplayName(formData: FormData) {
     .update(athleteProfiles)
     .set({
       displayName,
+      ...(preferredUnits ? { preferredUnits } : {}),
       updatedAt: now,
     })
     .where(eq(athleteProfiles.userId, session.user.id))
@@ -35,6 +41,11 @@ export async function updateDisplayName(formData: FormData) {
     .where(eq(user.id, session.user.id))
 
   revalidatePath("/settings")
+  revalidatePath("/")
+  revalidatePath("/activities")
+  revalidatePath("/insights")
+  revalidatePath("/summaries/week")
+  revalidatePath("/summaries/month")
   return { ok: true as const }
 }
 

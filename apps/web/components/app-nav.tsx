@@ -19,7 +19,12 @@ export function AppNav() {
     <nav className="flex items-center gap-1">
       {navItems.map(({ href, label, icon: Icon }) => {
         const active =
-          href === "/" ? pathname === "/" : pathname.startsWith(href)
+          href === "/"
+            ? pathname === "/"
+            : href === "/insights"
+              ? pathname.startsWith("/insights") ||
+                pathname.startsWith("/summaries")
+              : pathname.startsWith(href)
         return (
           <Link
             key={href}

@@ -179,15 +179,16 @@ export async function saveAthleteMetricRollup(
     .where(eq(athleteProfiles.id, athleteId))
 }
 
-export async function getWeekSummary(
+export async function getTrainingSummary(
   database: Database,
   athleteId: AthleteId,
+  period: "week" | "month",
   periodStart: Date
 ): Promise<TrainingSummary | null> {
   const row = await database.query.trainingSummaries.findFirst({
     where: and(
       eq(trainingSummaries.athleteId, athleteId),
-      eq(trainingSummaries.period, "week"),
+      eq(trainingSummaries.period, period),
       eq(trainingSummaries.periodStart, periodStart)
     ),
   })
@@ -207,6 +208,14 @@ export async function getWeekSummary(
     loadVersion: row.loadVersion,
     computedAt: row.computedAt,
   }
+}
+
+export async function getWeekSummary(
+  database: Database,
+  athleteId: AthleteId,
+  periodStart: Date
+): Promise<TrainingSummary | null> {
+  return getTrainingSummary(database, athleteId, "week", periodStart)
 }
 
 export async function listPersonalRecordsForAthlete(

@@ -549,7 +549,9 @@ Use **Neon PostgreSQL**. Prefer a **pooled** connection string for serverless (`
 
 Tokens never appear in client responses or UI — only a public status DTO is rendered.
 
-**Metrics (0.5):** After import/Update, PacePilot recomputes deterministic volume, intensity (`intensity.v1`), load (`load.v1`), PRs, and rollups. Open **Insights** to spot-check; use **Recompute all metrics** to refresh without re-importing. Methodology: [`docs/metrics-methodology.md`](./docs/metrics-methodology.md). Load is an internal score — **not a medical measurement**.
+**Metrics (0.5):** After import/Update, PacePilot recomputes deterministic volume, intensity (`intensity.v1`), load (`load.v1`), PRs, and rollups. Methodology: [`docs/metrics-methodology.md`](./docs/metrics-methodology.md). Load is an internal score — **not a medical measurement**.
+
+**Dashboard (0.6):** Home (`/`) is the daily “Good morning” view — week strip, rule-based insight cards, recent activities, links to week/month summaries. **Activities** supports filters and per-activity detail (with Strava deep link). **Insights** remains the deep-dive for PRs, rollups, and **Recompute all metrics**. Set km/mi under **Settings**.
 
 **Jobs:** Phase 0 founder sync runs **in `apps/web`** (server actions + `after()`). Inngest remains scaffolded at `apps/api` for later multi-user / long-running workers — **not required** to import activities today. `INNGEST_*` env vars are optional.
 

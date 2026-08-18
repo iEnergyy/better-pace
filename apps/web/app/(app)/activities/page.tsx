@@ -1,43 +1,91 @@
-import { listActivitiesForAthlete } from "@pacepilot/db"
+import type {
+  AthleteId,
+  IntensityLabel,
+  PreferredUnits,
+  Sport,
+} from "@pacepilot/core"
+import { INTENSITY_LABELS, isSport } from "@pacepilot/core"
+import { listActivitiesWithMetricsForAthlete } from "@pacepilot/db"
+import { athleteProfiles } from "@pacepilot/db/schema"
 import { Badge } from "@workspace/ui/components/badge"
+import { eq } from "drizzle-orm"
+import Link from "next/link"
+import { Suspense } from "react"
+import { ActivityFilters } from "@/components/activity-filters"
 import { EmptyState } from "@/components/empty-state"
 import { StravaSyncActions } from "@/components/strava-sync-actions"
 import { db } from "@/lib/db"
+import { formatDistance, formatDuration, formatPace } from "@/lib/format"
 import { requireSession } from "@/lib/session"
 import { getAthleteIdForUser, getStravaUiStatus } from "@/lib/strava/connection"
 
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  if (h > 0) return `${h}h ${m}m`
-  if (m > 0) return `${m}m ${s}s`
-  return `${s}s`
+export const dynamic = "force-dynamic"
+
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-function formatDistance(meters: number | null): string | null {
-  if (meters == null) return null
-  if (meters >= 1000) return `${(meters / 1000).toFixed(2)} km`
-  return `${Math.round(meters)} m`
+function first(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0]
+  return value
 }
 
-function formatPace(secondsPerKm: number | null): string | null {
-  if (secondsPerKm == null || !Number.isFinite(secondsPerKm)) return null
-  const minutes = Math.floor(secondsPerKm / 60)
-  const seconds = Math.round(secondsPerKm % 60)
-  return `${minutes}:${String(seconds).padStart(2, "0")}/km`
+function parseFilters(
+  raw: Record<string, string | string[] | undefined>,
+  athleteId: AthleteId
+) {
+  const sportRaw = first(raw.sport)
+  const intensityRaw = first(raw.intensity)
+  const fromRaw = first(raw.from)
+  const toRaw = first(raw.to)
+  const minRaw = first(raw.minDuration)
+
+  const sport =
+    sportRaw && sportRaw !== "all" && isSport(sportRaw)
+      ? (sportRaw as Sport)
+      : undefined
+  const intensity =
+    intensityRaw &&
+    intensityRaw !== "all" &&
+    (INTENSITY_LABELS as readonly string[]).includes(intensityRaw)
+      ? (intensityRaw as IntensityLabel)
+      : undefined
+
+  return {
+    athleteId,
+    limit: 100,
+    sport,
+    intensity,
+    from: fromRaw ? new Date(`${fromRaw}T00:00:00.000Z`) : undefined,
+    to: toRaw ? new Date(`${toRaw}T23:59:59.999Z`) : undefined,
+    minDurationSeconds: minRaw ? Number(minRaw) * 60 : undefined,
+  }
 }
 
-export default async function ActivitiesPage() {
+export default async function ActivitiesPage({ searchParams }: PageProps) {
   const session = await requireSession()
-  const athleteId = await getAthleteIdForUser(session.user.id)
+  const raw = await searchParams
+  const athleteId = (await getAthleteIdForUser(
+    session.user.id
+  )) as AthleteId | null
   const strava = athleteId
     ? await getStravaUiStatus(athleteId)
     : { connected: false, connection: null }
 
-  const activities = athleteId
-    ? await listActivitiesForAthlete(db, { athleteId, limit: 100 })
-    : []
+  const profile = athleteId
+    ? await db.query.athleteProfiles.findFirst({
+        where: eq(athleteProfiles.id, athleteId),
+      })
+    : null
+  const units: PreferredUnits = profile?.preferredUnits ?? "metric"
+
+  const activities =
+    athleteId != null
+      ? await listActivitiesWithMetricsForAthlete(
+          db,
+          parseFilters(raw, athleteId)
+        )
+      : []
 
   const importedCount = strava.connection?.importedCount ?? activities.length
   const syncStatus = strava.connection?.syncStatus ?? null
@@ -57,6 +105,12 @@ export default async function ActivitiesPage() {
         ) : null}
       </div>
 
+      {strava.connected ? (
+        <Suspense fallback={null}>
+          <ActivityFilters />
+        </Suspense>
+      ) : null}
+
       {!strava.connected ? (
         <EmptyState
           title="Connect Strava to see activities"
@@ -71,49 +125,54 @@ export default async function ActivitiesPage() {
               ? "Import in progress"
               : syncStatus === "error"
                 ? "Import failed"
-                : "No activities yet"
+                : "No matching activities"
           }
           description={
             syncStatus === "importing"
               ? (strava.connection?.syncProgress ??
-                "Pulling your Strava history. This page refreshes automatically.")
+                "Pulling your Strava history.")
               : syncStatus === "error"
                 ? (strava.connection?.lastError ??
-                  "Something went wrong. Use Retry import to try again.")
-                : "Click Update on Settings or above to pull recent activities, or wait for the historical import after connect."
+                  "Something went wrong. Use Retry import.")
+                : "Try clearing filters or click Update to pull recent activities."
           }
         />
       ) : (
         <ul className="divide-border flex flex-col divide-y">
           {activities.map((activity) => {
-            const distance = formatDistance(activity.distanceMeters)
-            const pace = formatPace(activity.averagePaceSecondsPerKm)
+            const distance = formatDistance(activity.distanceMeters, units)
+            const pace = formatPace(activity.averagePaceSecondsPerKm, units)
             return (
-              <li
-                key={activity.id}
-                className="flex flex-col gap-1 py-4 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
-              >
-                <div className="flex min-w-0 flex-col gap-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className="capitalize">
-                      {activity.sport}
-                    </Badge>
-                    <span className="truncate font-medium">
-                      {activity.name}
-                    </span>
+              <li key={activity.id} className="py-4">
+                <Link
+                  href={`/activities/${activity.id}`}
+                  className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
+                >
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="capitalize">
+                        {activity.sport}
+                      </Badge>
+                      {activity.intensity ? (
+                        <Badge variant="secondary">{activity.intensity}</Badge>
+                      ) : null}
+                      <span className="truncate font-medium">
+                        {activity.name}
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground text-sm">
+                      {activity.startedAt.toLocaleString()}
+                    </p>
                   </div>
-                  <p className="text-muted-foreground text-sm">
-                    {activity.startedAt.toLocaleString()}
-                  </p>
-                </div>
-                <div className="text-muted-foreground flex flex-wrap gap-3 text-sm tabular-nums">
-                  <span>{formatDuration(activity.durationSeconds)}</span>
-                  {distance ? <span>{distance}</span> : null}
-                  {pace ? <span>{pace}</span> : null}
-                  {activity.averageHeartRate != null ? (
-                    <span>{activity.averageHeartRate} bpm</span>
-                  ) : null}
-                </div>
+                  <div className="text-muted-foreground flex flex-wrap gap-3 text-sm tabular-nums">
+                    <span>{formatDuration(activity.durationSeconds)}</span>
+                    {distance ? <span>{distance}</span> : null}
+                    {pace ? <span>{pace}</span> : null}
+                    {activity.averageHeartRate != null ? (
+                      <span>{activity.averageHeartRate} bpm</span>
+                    ) : null}
+                  </div>
+                </Link>
               </li>
             )
           })}
