@@ -1,14 +1,13 @@
 import type { AthleteId } from "@pacepilot/core"
+import { STRAVA_OAUTH_STATE_COOKIE, StravaOAuthError } from "@pacepilot/strava"
 import { type NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getSession } from "@/lib/session"
-import { STRAVA_OAUTH_STATE_COOKIE } from "@/lib/strava/config"
 import {
   completeOAuthConnection,
   getAthleteIdForUser,
 } from "@/lib/strava/connection"
 import { triggerHistoricalImport } from "@/lib/strava/import-trigger"
-import { StravaOAuthError } from "@/lib/strava/oauth"
 
 function appOrigin(): string {
   return (
@@ -33,7 +32,7 @@ function settingsRedirect(params: Record<string, string>): NextResponse {
 }
 
 /**
- * Strava OAuth callback — exchange code, store encrypted tokens, trigger import stub.
+ * Strava OAuth callback — exchange code, store encrypted tokens, trigger import.
  */
 export async function GET(request: NextRequest) {
   const session = await getSession()
@@ -71,7 +70,7 @@ export async function GET(request: NextRequest) {
       {
         db,
         onConnected: async (connection) => {
-          await triggerHistoricalImport(connection)
+          triggerHistoricalImport(connection)
         },
       }
     )

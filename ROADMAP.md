@@ -1,6 +1,6 @@
 # PacePilot — Implementation Roadmap
 
-**Status:** Phase 0 in progress (0.1 local foundation done; 0.2 auth done locally; Vercel + non-prod DB wiring open)  
+**Status:** Phase 0 in progress (0.1–0.4 done; 0.5 metrics engine in progress; Vercel + non-prod DB wiring open)  
 **Based on:** [README.md](./README.md), [PRD.md](./PRD.md)  
 **North star:** Useful Insights per Active Athlete  
 **Architecture:** Turborepo monorepo · domain models in `packages/core` (DDD domain layer)  
@@ -57,6 +57,7 @@ better-pace/
 ├── packages/
 │   ├── core/         # Domain layer — entities, value objects, domain rules
 │   ├── db/           # Drizzle schema, migrations, DB client (depends on core)
+│   ├── strava/       # Strava HTTP adapter + token crypto
 │   ├── ui/           # Shared shadcn/ui components + design tokens
 │   └── typescript-config/
 ├── turbo.json
@@ -215,8 +216,8 @@ User
 
 **Strava app setup**
 
-- [ ] Create Strava API application *(founder — see README)*
-- [ ] Configure callback URLs for local + deployed envs *(founder — local documented; deploy when preview domain is ready)*
+- [x] Create Strava API application *(founder — see README)*
+- [x] Configure callback URLs for local + deployed envs *(founder — local documented; deploy when preview domain is ready)*
 - [x] Request scopes needed for activity read (+ athlete profile as required) — `read,activity:read_all,profile:read_all`
 
 **OAuth flow**
@@ -252,58 +253,56 @@ User → Connect Strava → Strava auth → Callback → Store tokens → Trigge
 
 ### Outcomes
 
-- Historical import + ongoing sync produce a reliable unified activity timeline.
+- Historical import + on-demand Update sync produce a reliable unified activity timeline.
 
 ### Implement
 
 **Background jobs**
 
-- [ ] Job: `strava.import.historical` (paginated activity list fetch)
-- [ ] Job: `strava.sync.recent` (incremental / webhook or poll)
-- [ ] Job: `strava.activity.detail` (fetch detailed activity when list payload is insufficient)
-- [ ] Job progress events for UI (imported count / total estimate)
-- [ ] Idempotent upserts by `(source, sourceActivityId)`
+- [x] Job: `strava/import.historical` (paginated activity list fetch) — **runs in Next.js `after()` / server actions for Phase 0**
+- [x] Job: `strava/sync.recent` (incremental — **Update button only**, no cron poll) — **Next.js, not Inngest**
+- [x] Job: `strava/activity.detail` (selective detail fetch inline after list pages)
+- [x] Job progress via connection `syncStatus` + activity count for UI
+- [x] Idempotent upserts by `(athleteId, source, externalId)`
+
+**Note:** Inngest workers deferred while founder-only; sync orchestration lives in `apps/web/lib/strava/sync-runner.ts`.
 
 **Webhook (preferred) or polling**
 
-- [ ] Strava webhook subscription endpoint (validation + event handling) **or**
-- [ ] Scheduled poll for new/updated activities (acceptable for Phase 0 if webhooks delayed)
+- [ ] Strava webhook subscription endpoint (validation + event handling) — **deferred**
+- [x] On-demand Update (`strava/sync.recent`) instead of scheduled poll for Phase 0
 
 **Unified Activity model** (define in `packages/core`, persist via `packages/db`)
 
 ```text
 Activity {
-  id, athleteId, source, sourceActivityId,
+  id, athleteId, source, externalId (= sourceActivityId),
   sport, startedAt, duration,
   distance, elevationGain,
   averageHeartRate, maxHeartRate, calories,
   averageSpeed, maxSpeed,
-  rawData, createdAt, updatedAt
+  rawData, metricsVersion, createdAt, updatedAt
 }
 ```
 
-- [ ] Domain `Activity` + sport-specific value objects/types in `packages/core`
-- [ ] Sport mapping from Strava types → internal sports:
-  - Running, Padel, Cycling, Swimming, Walking, Hiking, Strength, Other
-- [ ] Sport-specific metric extensions in `core`:
-  - `RunningMetrics` (pace, cadence, GAP if available)
-  - `PadelMetrics` (duration, HR, calories)
-  - `SwimmingMetrics` (distance, duration, pace)
-- [ ] Preserve `rawData` for reprocessing without re-fetch when possible
-- [ ] Reprocess pipeline version field (`metricsVersion`)
+- [x] Domain `Activity` + sport-specific value objects/types in `packages/core`
+- [x] Sport mapping from Strava types → internal sports (`@pacepilot/strava`)
+- [x] Sport-specific metric extensions in `core` (thin Running/Padel/Swimming helpers)
+- [x] Preserve `rawData` for reprocessing without re-fetch when possible
+- [x] Reprocess pipeline version field (`metricsVersion` = `activity.v1`)
 
 **Import UX**
 
-- [ ] Progress screen during historical import
-- [ ] Empty state before first sync
-- [ ] Error state with retry
+- [x] Progress / status refresh during historical import (`importing`)
+- [x] Empty state before first sync
+- [x] Error state with retry + Update affordance
 
 ### Acceptance criteria
 
-- Full personal history imports without silent drops
-- Re-running import does not duplicate activities
-- Timeline shows activities across multiple sports
-- New Strava activity appears in PacePilot within an acceptable window (document target: e.g. &lt; 15 min via poll, or near-real-time via webhook)
+- [x] Full personal history imports without silent drops *(paginated until empty page)*
+- [x] Re-running import does not duplicate activities *(unique index + upsert)*
+- [x] Timeline shows activities across multiple sports *(`/activities`)*
+- [x] New Strava activity appears after user clicks **Update** (no background freshness SLA)
 
 ---
 
@@ -317,19 +316,19 @@ Activity {
 
 **Core calculations (versioned)**
 
-- [ ] Daily / weekly / monthly training volume
+- [x] Daily / weekly / monthly training volume
   - By sport and total
   - Distance-based sports vs duration-based sports (padel/strength)
-- [ ] Training frequency (sessions per week / streak / consistency score)
-- [ ] Intensity classification: Easy / Moderate / Hard
+- [x] Training frequency (sessions per week / streak / consistency score)
+- [x] Intensity classification: Easy / Moderate / Hard
   - Transparent rules (HR zones if available, else pace/relative effort proxies)
   - Document methodology + version (`intensity.v1`)
-- [ ] Training load (internal metric)
+- [x] Training load (internal metric)
   - Transparent, deterministic, versioned (`load.v1`)
   - Explicit disclaimer: not a medical measurement
-- [ ] High-intensity clusters / consecutive hard days
-- [ ] Fitness / recovery / performance trend placeholders (simple moving windows for Phase 0)
-- [ ] Personal records:
+- [x] High-intensity clusters / consecutive hard days
+- [x] Fitness / recovery / performance trend placeholders (simple moving windows for Phase 0)
+- [x] Personal records:
   - Running: fastest 1K / 5K / 10K, longest run
   - Cycling: fastest / longest
   - Swimming: longest / fastest where data permits
@@ -337,23 +336,23 @@ Activity {
 
 **Derived entities**
 
-- [ ] `ActivityMetric`
-- [ ] `TrainingSummary` (week / month)
-- [ ] `PersonalRecord`
-- [ ] `AthleteProfile` rollups refreshed after sync
+- [x] `ActivityMetric`
+- [x] `TrainingSummary` (week / month)
+- [x] `PersonalRecord`
+- [x] `AthleteProfile` rollups refreshed after sync
 
 **Athlete profile fields to populate**
 
-- sports, trainingFrequency, weeklyVolume, trainingLoad
-- consistencyScore, fitnessTrend, recoveryTrend, performanceTrend
-- personalRecords
+- [x] sports, trainingFrequency, weeklyVolume, trainingLoad
+- [x] consistencyScore, fitnessTrend, recoveryTrend, performanceTrend
+- [x] personalRecords
 
 ### Acceptance criteria
 
-- Spot-check 20+ personal activities against Strava numbers (distance, duration, HR)
-- Weekly totals match manual expectation within documented tolerance
-- Intensity labels feel sane for known easy/hard sessions
-- Misleading metrics are logged in a “validation notes” list for Phase 1 fixes
+- [ ] Spot-check 20+ personal activities against Strava numbers (distance, duration, HR) — *founder dogfood*
+- [ ] Weekly totals match manual expectation within documented tolerance — *founder dogfood*
+- [ ] Intensity labels feel sane for known easy/hard sessions — *founder dogfood*
+- [x] Misleading metrics are logged in a “validation notes” list for Phase 1 fixes — [`docs/validation-notes.md`](./docs/validation-notes.md)
 
 ---
 
@@ -367,35 +366,40 @@ Activity {
 
 **Dashboard (“Good morning” view)**
 
-- [ ] This week: training load, consistency, fitness/recovery trends
-- [ ] Activity count, total training time, sports touched
-- [ ] Rule-based insight cards (templates, not LLM), e.g.:
+- [x] This week: training load, consistency, fitness/recovery trends
+- [x] Activity count, total training time, sports touched
+- [x] Rule-based insight cards (templates, not LLM), e.g.:
   - Volume up/down vs last week
   - High-intensity cluster warning
   - Cross-sport load note (running km looks low but total load is high because of padel)
-- [ ] Units: km / mi preference
+  - Stretch: new PR / consistency / recovery pressure
+- [x] Units: km / mi preference (Settings + display)
 
 **Activity timeline**
 
-- [ ] Chronological list
-- [ ] Filters: sport, date range, intensity, duration
-- [ ] Activity detail page (core metrics + sport-specific fields)
+- [x] Chronological list
+- [x] Filters: sport, date range, intensity, duration
+- [x] Activity detail page (core metrics + sport-specific fields + Strava deep link)
 
 **Summaries**
 
-- [ ] Weekly summary page
-- [ ] Monthly summary page
+- [x] Weekly summary page (`/summaries/week`)
+- [x] Monthly summary page (`/summaries/month`)
 
 **Running intelligence (deepest for V1)**
 
-- [ ] Pace trends, volume trends
-- [ ] Easy vs hard / long-run identification (heuristic)
-- [ ] Basic PR highlighting
+- [x] Pace trends, volume trends
+- [x] Easy vs hard / long-run identification (heuristic)
+- [x] Basic PR highlighting
 
 **Padel intelligence (physiological only)**
 
-- [ ] Duration, HR, calories, frequency, load, trends
-- [ ] No fake match-score claims
+- [x] Duration, HR, calories, frequency, load, trends
+- [x] No fake match-score claims
+
+**Also**
+
+- [x] Insights kept as deep-dive (PRs, recompute, methodology) — not merged into home
 
 ### Acceptance criteria
 
@@ -943,4 +947,4 @@ You are ready to write code when:
 5. Background jobs provider chosen (**Inngest**)  
 6. Phase 0.1 local foundation is in place; remaining 0.1 items are Vercel + non-prod DB + first migration  
 
-**Next concrete step:** close Phase 0.1 Vercel preview wiring if still open, then 0.4 (activity sync) after founder Strava app credentials are in `.env`.
+**Next concrete step:** close Phase 0.1 Vercel preview wiring if still open, then **0.5 metrics engine** (volume, frequency, intensity, load, PRs) on top of synced activities.

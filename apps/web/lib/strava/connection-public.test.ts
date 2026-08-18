@@ -18,6 +18,7 @@ const sample: StravaConnection = {
   disconnectedAt: null,
   lastSyncAt: null,
   lastError: null,
+  syncProgress: null,
 }
 
 describe("StravaConnection public view", () => {
@@ -32,6 +33,7 @@ describe("StravaConnection public view", () => {
       disconnectedAt: null,
       lastSyncAt: null,
       lastError: null,
+      syncProgress: null,
     })
     expect(JSON.stringify(pub)).not.toContain("accessToken")
     expect(JSON.stringify(pub)).not.toContain("refreshToken")

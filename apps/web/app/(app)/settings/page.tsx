@@ -46,7 +46,10 @@ export default async function SettingsPage({
         syncStatus={strava.connection?.syncStatus ?? null}
         scopes={strava.connection?.scopes ?? []}
         connectedAt={strava.connection?.connectedAt?.toISOString() ?? null}
+        lastSyncAt={strava.connection?.lastSyncAt?.toISOString() ?? null}
         lastError={strava.connection?.lastError ?? null}
+        importedCount={strava.connection?.importedCount ?? 0}
+        syncProgress={strava.connection?.syncProgress ?? null}
         flash={flash}
         flashReason={params.reason ?? null}
       />
@@ -54,6 +57,7 @@ export default async function SettingsPage({
       <AccountSettings
         email={session.user.email}
         displayName={profile?.displayName ?? session.user.name}
+        preferredUnits={profile?.preferredUnits ?? "metric"}
         deletedAt={profile?.deletedAt ?? null}
       />
     </div>

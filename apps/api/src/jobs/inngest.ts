@@ -1,14 +1,10 @@
-import { Inngest } from "inngest"
+import { inngest } from "./client"
 
 /**
  * Background jobs scaffold (Inngest).
- * Wire event handlers for Strava sync / metrics in later Phase 0 workstreams.
- * Alternative considered: Trigger.dev — revisit if Inngest constraints appear.
+ * Strava sync runs in Next.js for Phase 0 founder dogfood — Inngest workers deferred.
  */
-export const inngest = new Inngest({
-  id: "pacepilot",
-  name: "PacePilot",
-})
+export { inngest } from "./client"
 
 export const helloJob = inngest.createFunction(
   { id: "foundation-hello", name: "Foundation hello" },

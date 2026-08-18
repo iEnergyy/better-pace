@@ -17,6 +17,7 @@ test.describe("strava connection UI", () => {
     const connect = page.getByRole("link", { name: "Connect Strava" })
     await expect(connect).toBeVisible()
     await expect(connect).toHaveAttribute("href", "/api/strava/connect")
+    await expect(page.getByText(/no background poll/i)).toBeVisible()
 
     const html = await page.content()
     expect(html).not.toMatch(/access_token/i)
@@ -29,5 +30,22 @@ test.describe("strava connection UI", () => {
   }) => {
     await page.goto("/api/strava/connect")
     await expect(page).toHaveURL(/\/sign-in/)
+  })
+
+  test("activities page shows connect empty state without tokens", async ({
+    authenticatedPage,
+    page,
+  }) => {
+    await authenticatedPage.expectLoaded()
+    await page.goto("/activities")
+    await expect(
+      page.getByRole("heading", { name: "Activities" })
+    ).toBeVisible()
+    await expect(
+      page.getByRole("link", { name: "Connect Strava" })
+    ).toBeVisible()
+    const html = await page.content()
+    expect(html).not.toMatch(/access_token/i)
+    expect(html).not.toMatch(/accessTokenEncrypted/)
   })
 })

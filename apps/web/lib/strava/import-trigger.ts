@@ -1,51 +1,30 @@
-import type { AthleteId, StravaConnection } from "@pacepilot/core"
+import type { StravaConnection } from "@pacepilot/core"
+import { after } from "next/server"
+import { db } from "@/lib/db"
+import { endAthleteSync, tryBeginAthleteSync } from "@/lib/strava/sync-lock"
+import { runHistoricalImport } from "@/lib/strava/sync-runner"
 
 /**
- * Trigger historical import after a successful Strava connect.
- * Full job handler lands in phase 0.4 — this only emits an event when
- * INNGEST_EVENT_KEY is configured, otherwise it's a no-op log.
+ * Start historical import after the current response finishes (no Inngest).
+ * Uses `after()` so the work survives OAuth redirects / short server actions.
  */
-export async function triggerHistoricalImport(
-  connection: StravaConnection
-): Promise<{ emitted: boolean }> {
-  const eventKey = process.env.INNGEST_EVENT_KEY?.trim()
-  if (!eventKey) {
-    console.info(
-      "[strava] import trigger deferred (no INNGEST_EVENT_KEY); syncStatus=importing",
-      {
-        athleteId: connection.athleteId,
-        stravaAthleteId: connection.stravaAthleteId,
-      }
-    )
-    return { emitted: false }
+export function triggerHistoricalImport(connection: StravaConnection): void {
+  const athleteId = connection.athleteId
+  if (!tryBeginAthleteSync(athleteId)) {
+    console.info("[strava] historical import already running", { athleteId })
+    return
   }
 
-  try {
-    const response = await fetch(`https://inn.gs/e/${eventKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: "strava/import.historical",
-        data: {
-          athleteId: connection.athleteId as AthleteId,
-          stravaAthleteId: connection.stravaAthleteId,
-          connectionId: connection.id,
-        },
-      }),
-    })
-    if (!response.ok) {
-      console.warn("[strava] failed to emit import event", {
-        status: response.status,
-        athleteId: connection.athleteId,
+  after(async () => {
+    try {
+      await runHistoricalImport(athleteId, db)
+    } catch (error) {
+      console.error("[strava] historical import crashed", {
+        athleteId,
+        error: error instanceof Error ? error.message : "unknown",
       })
-      return { emitted: false }
+    } finally {
+      endAthleteSync(athleteId)
     }
-    return { emitted: true }
-  } catch (error) {
-    console.warn("[strava] failed to emit import event", {
-      athleteId: connection.athleteId,
-      error: error instanceof Error ? error.message : "unknown",
-    })
-    return { emitted: false }
-  }
+  })
 }

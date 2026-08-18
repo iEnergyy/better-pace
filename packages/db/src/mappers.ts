@@ -27,6 +27,9 @@ export function toAthleteProfile(row: AthleteProfileRow): AthleteProfile {
     displayName: row.displayName,
     timezone: row.timezone,
     preferredUnits: row.preferredUnits,
+    metricsRollup: (row.metricsRollup as AthleteProfile["metricsRollup"]) ?? null,
+    metricsVersion: row.metricsVersion ?? null,
+    metricsComputedAt: row.metricsComputedAt ?? null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     deletedAt: row.deletedAt,
@@ -48,6 +51,11 @@ export function toActivity(row: ActivityRow): Activity {
     averageHeartRate: row.averageHeartRate,
     maxHeartRate: row.maxHeartRate,
     averagePaceSecondsPerKm: row.averagePaceSecondsPerKm,
+    calories: row.calories,
+    averageSpeedMetersPerSecond: row.averageSpeedMetersPerSecond,
+    maxSpeedMetersPerSecond: row.maxSpeedMetersPerSecond,
+    rawData: row.rawData ?? null,
+    metricsVersion: row.metricsVersion,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   }
@@ -67,6 +75,7 @@ export function toStravaConnection(row: StravaConnectionRow): StravaConnection {
     disconnectedAt: row.disconnectedAt,
     lastSyncAt: row.lastSyncAt,
     lastError: row.lastError,
+    syncProgress: row.syncProgress,
   }
 }
 

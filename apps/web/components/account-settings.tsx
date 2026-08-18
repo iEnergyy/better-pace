@@ -25,12 +25,14 @@ import { softDeleteAccount, updateDisplayName } from "@/lib/actions/account"
 type AccountSettingsProps = {
   email: string
   displayName: string
+  preferredUnits: "metric" | "imperial"
   deletedAt: Date | null
 }
 
 export function AccountSettings({
   email,
   displayName,
+  preferredUnits,
   deletedAt,
 }: AccountSettingsProps) {
   const router = useRouter()
@@ -47,7 +49,7 @@ export function AccountSettings({
         setError(result.error)
         return
       }
-      setMessage("Display name saved.")
+      setMessage("Profile saved.")
       router.refresh()
     })
   }
@@ -86,6 +88,21 @@ export function AccountSettings({
                 <FieldDescription>
                   Email is managed by authentication and cannot be changed here
                   yet.
+                </FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="preferredUnits">Distance units</FieldLabel>
+                <select
+                  id="preferredUnits"
+                  name="preferredUnits"
+                  defaultValue={preferredUnits}
+                  className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
+                >
+                  <option value="metric">Kilometers (metric)</option>
+                  <option value="imperial">Miles (imperial)</option>
+                </select>
+                <FieldDescription>
+                  Used on dashboard, activities, summaries, and insights.
                 </FieldDescription>
               </Field>
               <Field data-invalid={error ? true : undefined}>

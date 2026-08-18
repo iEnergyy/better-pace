@@ -7,31 +7,30 @@ import {
 } from "@pacepilot/core"
 import {
   athleteProfiles,
+  countActivitiesForAthlete,
+  type Database,
   stravaConnections,
   toStravaConnection,
 } from "@pacepilot/db"
-import { and, eq, isNull } from "drizzle-orm"
-import {
-  decryptToken,
-  encryptToken,
-  requireTokenEncryptionKey,
-} from "@/lib/crypto/token-encryption"
-import { db } from "@/lib/db"
-import { getStravaOAuthConfig } from "./config"
 import {
   deauthorize,
+  decryptToken,
+  encryptToken,
   exchangeAuthorizationCode,
+  getStravaOAuthConfig,
   hasRequiredScopes,
   parseGrantedScopes,
-  refreshAccessToken,
+  requireTokenEncryptionKey,
+  resolveAccessToken,
   StravaOAuthError,
-} from "./oauth"
+} from "@pacepilot/strava"
+import { and, eq, isNull } from "drizzle-orm"
+import { db } from "@/lib/db"
 
-const REFRESH_SKEW_MS = 5 * 60 * 1000
 const CLEARED_TOKEN = ""
 
 export type ConnectionServiceDeps = {
-  db: typeof db
+  db: Database
   fetchImpl?: typeof fetch
   encryptionKey?: string
   now?: () => Date
@@ -45,7 +44,7 @@ function getKey(deps: ConnectionServiceDeps): string {
 
 export async function getAthleteIdForUser(
   userId: string,
-  database: typeof db = db
+  database: Database = db
 ): Promise<AthleteId | null> {
   const profile = await database.query.athleteProfiles.findFirst({
     where: eq(athleteProfiles.userId, userId),
@@ -55,7 +54,7 @@ export async function getAthleteIdForUser(
 
 export async function findConnectionForAthlete(
   athleteId: AthleteId,
-  database: typeof db = db
+  database: Database = db
 ): Promise<StravaConnection | null> {
   const row = await database.query.stravaConnections.findFirst({
     where: eq(stravaConnections.athleteId, athleteId),
@@ -65,13 +64,12 @@ export async function findConnectionForAthlete(
 
 export async function getConnectionStatus(
   athleteId: AthleteId,
-  database: typeof db = db
+  database: Database = db
 ): Promise<StravaConnectionPublic | null> {
   const connection = await findConnectionForAthlete(athleteId, database)
-  if (!connection || !isStravaConnected(connection)) {
-    return connection ? toPublicStravaConnection(connection) : null
-  }
-  return toPublicStravaConnection(connection)
+  if (!connection) return null
+  const importedCount = await countActivitiesForAthlete(database, athleteId)
+  return toPublicStravaConnection(connection, { importedCount })
 }
 
 /**
@@ -85,13 +83,16 @@ export type StravaUiStatus = {
 
 export async function getStravaUiStatus(
   athleteId: AthleteId,
-  database: typeof db = db
+  database: Database = db
 ): Promise<StravaUiStatus> {
   const connection = await findConnectionForAthlete(athleteId, database)
   if (!connection) {
     return { connected: false, connection: null }
   }
-  const publicConnection = toPublicStravaConnection(connection)
+  const importedCount = await countActivitiesForAthlete(database, athleteId)
+  const publicConnection = toPublicStravaConnection(connection, {
+    importedCount,
+  })
   return {
     connected: isStravaConnected(connection),
     connection: publicConnection,
@@ -145,6 +146,7 @@ export async function completeOAuthConnection(
         connectedAt: now,
         disconnectedAt: null,
         lastError: null,
+        syncProgress: "Starting historical import…",
       })
       .where(eq(stravaConnections.id, existing.id))
       .returning()
@@ -163,6 +165,7 @@ export async function completeOAuthConnection(
         connectedAt: now,
         disconnectedAt: null,
         lastError: null,
+        syncProgress: "Starting historical import…",
       })
       .returning()
     row = inserted
@@ -176,7 +179,7 @@ export async function completeOAuthConnection(
   if (deps.onConnected) {
     await deps.onConnected(connection)
   }
-  return toPublicStravaConnection(connection)
+  return toPublicStravaConnection(connection, { importedCount: 0 })
 }
 
 /**
@@ -227,14 +230,18 @@ export async function disconnectConnection(
     .returning()
 
   const next = updated ? toStravaConnection(updated) : connection
+  const importedCount = await countActivitiesForAthlete(deps.db, athleteId)
   return {
     connected: false,
-    connection: toPublicStravaConnection({
-      ...next,
-      disconnectedAt: next.disconnectedAt ?? now,
-      accessTokenEncrypted: CLEARED_TOKEN,
-      refreshTokenEncrypted: CLEARED_TOKEN,
-    }),
+    connection: toPublicStravaConnection(
+      {
+        ...next,
+        disconnectedAt: next.disconnectedAt ?? now,
+        accessTokenEncrypted: CLEARED_TOKEN,
+        refreshTokenEncrypted: CLEARED_TOKEN,
+      },
+      { importedCount }
+    ),
   }
 }
 
@@ -247,9 +254,6 @@ export async function getValidAccessToken(
   deps: ConnectionServiceDeps = { db }
 ): Promise<string> {
   const config = getStravaOAuthConfig()
-  const fetchImpl = deps.fetchImpl ?? fetch
-  const key = getKey(deps)
-  const now = deps.now?.() ?? new Date()
   const connection = await findConnectionForAthlete(athleteId, deps.db)
 
   if (!(connection && isStravaConnected(connection))) {
@@ -259,23 +263,50 @@ export async function getValidAccessToken(
     throw new StravaOAuthError("Strava tokens are missing", 401)
   }
 
-  const accessToken = decryptToken(connection.accessTokenEncrypted, key)
-  const refreshToken = decryptToken(connection.refreshTokenEncrypted, key)
+  return resolveAccessToken({
+    accessTokenEncrypted: connection.accessTokenEncrypted,
+    refreshTokenEncrypted: connection.refreshTokenEncrypted,
+    expiresAt: connection.expiresAt,
+    encryptionKey: getKey(deps),
+    config,
+    now: deps.now?.(),
+    fetchImpl: deps.fetchImpl,
+    onRefreshed: async (tokens) => {
+      await deps.db
+        .update(stravaConnections)
+        .set({
+          accessTokenEncrypted: tokens.accessTokenEncrypted,
+          refreshTokenEncrypted: tokens.refreshTokenEncrypted,
+          expiresAt: tokens.expiresAt,
+          lastError: null,
+        })
+        .where(eq(stravaConnections.id, connection.id))
+    },
+  })
+}
 
-  if (connection.expiresAt.getTime() - now.getTime() > REFRESH_SKEW_MS) {
-    return accessToken
-  }
+export async function markConnectionSyncStatus(
+  athleteId: AthleteId,
+  update: {
+    syncStatus: "idle" | "importing" | "synced" | "error"
+    lastError?: string | null
+    lastSyncAt?: Date | null
+    syncProgress?: string | null
+  },
+  database: Database = db
+): Promise<void> {
+  const patch: {
+    syncStatus: typeof update.syncStatus
+    lastError?: string | null
+    lastSyncAt?: Date | null
+    syncProgress?: string | null
+  } = { syncStatus: update.syncStatus }
+  if (update.lastError !== undefined) patch.lastError = update.lastError
+  if (update.lastSyncAt !== undefined) patch.lastSyncAt = update.lastSyncAt
+  if (update.syncProgress !== undefined) patch.syncProgress = update.syncProgress
 
-  const refreshed = await refreshAccessToken(config, refreshToken, fetchImpl)
-  await deps.db
+  await database
     .update(stravaConnections)
-    .set({
-      accessTokenEncrypted: encryptToken(refreshed.accessToken, key),
-      refreshTokenEncrypted: encryptToken(refreshed.refreshToken, key),
-      expiresAt: refreshed.expiresAt,
-      lastError: null,
-    })
-    .where(eq(stravaConnections.id, connection.id))
-
-  return refreshed.accessToken
+    .set(patch)
+    .where(eq(stravaConnections.athleteId, athleteId))
 }

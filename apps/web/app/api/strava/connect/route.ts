@@ -1,12 +1,12 @@
 import { randomBytes } from "node:crypto"
-import { NextResponse } from "next/server"
-import { getSession } from "@/lib/session"
 import {
+  buildAuthorizeUrl,
   getStravaOAuthConfig,
   STRAVA_OAUTH_STATE_COOKIE,
   type StravaOAuthConfig,
-} from "@/lib/strava/config"
-import { buildAuthorizeUrl } from "@/lib/strava/oauth"
+} from "@pacepilot/strava"
+import { NextResponse } from "next/server"
+import { getSession } from "@/lib/session"
 
 function appOrigin(): string {
   return (
